@@ -1,0 +1,42 @@
+import { Router } from 'express';
+import authRouter from '../modules/auth/routes/auth.routes';
+import usersRouter from '../modules/users/routes';
+import cashiersRouter from '../modules/cashiers/routes';
+import categoriesRouter from '../modules/categories/routes';
+import menuRouter from '../modules/menu/routes';
+import ordersRouter from '../modules/orders/routes';
+import billingRouter from '../modules/billing/routes';
+import paymentsRouter from '../modules/payments/routes';
+import reportsRouter from '../modules/reports/routes';
+import settingsRouter from '../modules/settings/routes';
+import printingRouter from '../modules/printing/routes';
+import tokenRouter from '../modules/token/routes';
+import analyticsRouter from '../modules/analytics/routes/analytics.routes';
+import kitchenRouter from '../modules/kitchen/routes';
+import customersRouter from '../modules/customers/routes';
+import notificationsRouter from '../modules/notifications/routes';
+import adminRouter from '../modules/admin/routes';
+import auditRouter from '../modules/admin/routes/audit.routes';
+
+const router = Router();
+
+router.use('/auth', authRouter);
+router.use('/users', usersRouter);
+router.use('/cashiers', cashiersRouter);
+router.use('/categories', categoriesRouter);
+router.use('/menu', menuRouter);
+router.use('/orders', ordersRouter);
+router.use('/billing', billingRouter);
+router.use('/payments', paymentsRouter);
+router.use('/reports', reportsRouter);
+router.use('/settings', settingsRouter);
+router.use('/printing', printingRouter);
+router.use('/token', tokenRouter);
+router.use('/analytics', analyticsRouter);
+router.use('/kitchen', kitchenRouter);
+router.use('/customers', customersRouter);
+router.use('/notifications', notificationsRouter);
+router.use('/admin', adminRouter);
+router.use('/audit', auditRouter);
+
+export default router;
