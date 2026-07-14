@@ -11,15 +11,22 @@ export const getMenuItems = async (req: Request, res: Response, next: NextFuncti
     if (categoryId) {
       whereClause.categoryId = categoryId;
     }
+    // Fix: isAvailable query could be "true" or "false" string, but what if we only want active/not deleted?
+    // The instructions say "Do not accidentally filter out all records."
+    // If we only filter isAvailable when it's passed, it should be fine.
     if (isAvailable !== undefined) {
       whereClause.isAvailable = isAvailable === 'true';
     }
 
     const menuItems = await prisma.menuItem.findMany({
       where: whereClause,
+      include: {
+        category: true
+      },
       orderBy: { name: 'asc' },
     });
     
+    console.log("Menu Items:", menuItems.length);
     res.json({ success: true, data: menuItems });
   } catch (error) {
     next(error);

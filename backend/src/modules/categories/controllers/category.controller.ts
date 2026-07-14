@@ -7,6 +7,7 @@ export const getCategories = async (req: Request, res: Response, next: NextFunct
       where: { status: 'ACTIVE' },
       orderBy: { displayOrder: 'asc' },
     });
+    console.log("Categories:", categories.length);
     res.json({ success: true, data: categories });
   } catch (error) {
     next(error);

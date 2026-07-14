@@ -23,10 +23,15 @@ export default function MenuManagement() {
         categoryApi.getCategories(),
         menuApi.getMenuItems(),
       ]);
+      console.log('catRes:', catRes.data);
+      console.log('menuRes:', menuRes.data);
       setCategories(catRes.data.data || []);
       setMenuItems(menuRes.data.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load menu data', error);
+      if (error.response) {
+        console.error('Error Response:', error.response.data);
+      }
       notify('error', 'Failed to load menu data');
     } finally {
       setIsLoading(false);
@@ -62,6 +67,9 @@ export default function MenuManagement() {
   if (isLoading) {
     return <div className="p-8">Loading Menu Management...</div>;
   }
+
+  console.log(categories);
+  console.log(menuItems);
 
   return (
     <div className="p-8 space-y-6">
