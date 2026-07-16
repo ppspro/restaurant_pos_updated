@@ -1,0 +1,55 @@
+/* Receipt Print Media Styles
+   Isolates .receipt-print-area to show only during window.print()
+   Approximates 80mm thermal paper width in browser print dialog
+*/
+
+@media print {
+  /* Hide everything except the active receipt */
+  body > *:not(#receipt-print-root) {
+    display: none !important;
+  }
+
+  #receipt-print-root {
+    display: block !important;
+  }
+
+  /* Page setup for thermal paper (80mm ≈ 3.15 inch) */
+  @page {
+    size: 80mm auto;
+    margin: 4mm 2mm;
+  }
+
+  .receipt-print-area {
+    width: 80mm !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 11px !important;
+    color: #000 !important;
+    background: #fff !important;
+    padding: 4px !important;
+  }
+
+  /* 58mm override class */
+  .receipt-58mm {
+    width: 58mm !important;
+    font-size: 10px !important;
+  }
+
+  /* A4 override class */
+  .receipt-a4 {
+    width: 210mm !important;
+    font-size: 12px !important;
+  }
+
+  /* Remove shadows/borders in print */
+  .receipt-print-area * {
+    box-shadow: none !important;
+    border-color: #888 !important;
+  }
+
+  /* Ensure dashed rules print correctly */
+  .receipt-print-area hr,
+  .receipt-print-area .border-dashed {
+    border-style: dashed !important;
+    border-color: #555 !important;
+  }
+}
