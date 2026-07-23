@@ -53,7 +53,7 @@ const ReceiptSheet = ({ data }: { data: ReceiptData }) => {
           {data.items.map((item, i) => (
             <React.Fragment key={i}>
               <tr>
-                <td className="text-left py-0.5">{item.name}</td>
+                <td className="text-left py-0.5"><span className="font-bold mr-1">{item.itemNumber}</span> {item.name}</td>
                 <td className="text-right">{item.quantity}</td>
                 {!isKOT && <td className="text-right">{item.unitPrice.toFixed(2)}</td>}
                 {!isKOT && <td className="text-right">{item.lineTotal.toFixed(2)}</td>}

@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { useBillingStore } from '../../store/billing.store';
 import { MenuCard } from './MenuCard';
+import { QuickSelectPopup } from './QuickSelectPopup';
 import { Utensils } from 'lucide-react';
+import { useQuickSelect } from '../../hooks/useQuickSelect';
 
 /**
  * MenuGrid uses useMemo to derive the filtered item list.
@@ -27,9 +29,10 @@ export const MenuGrid = () => {
 
       // Search filter
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
+        const q = searchQuery.toLowerCase().trim();
         return (
           item.name.toLowerCase().includes(q) ||
+          item.itemNumber?.toLowerCase().includes(q) ||
           item.shortCode.toLowerCase().includes(q) ||
           item.sku.toLowerCase().includes(q) ||
           (item.barcode && item.barcode.includes(q))
@@ -39,6 +42,8 @@ export const MenuGrid = () => {
       return true;
     });
   }, [menuItems, selectedCategoryId, searchQuery]);
+
+  const { buffer, selectedItem, isOpen } = useQuickSelect(filtered);
 
   if (filtered.length === 0) {
     return (
@@ -51,11 +56,14 @@ export const MenuGrid = () => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pr-1 overflow-y-auto max-h-[calc(100vh-12rem)] pb-4">
-      {filtered.map((item) => (
-        <MenuCard key={item.id} item={item} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pr-1 overflow-y-auto max-h-[calc(100vh-12rem)] pb-4">
+        {filtered.map((item, index) => (
+          <MenuCard key={item.id} item={item} referenceNumber={index + 1} />
+        ))}
+      </div>
+      <QuickSelectPopup isOpen={isOpen} buffer={buffer} selectedItem={selectedItem} />
+    </>
   );
 };
 export default MenuGrid;

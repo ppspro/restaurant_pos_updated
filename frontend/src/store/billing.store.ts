@@ -5,6 +5,7 @@ import { categoryApi } from '../api/category.api';
 import { menuApi } from '../api/menu.api';
 export interface CartItem {
   id: string;
+  itemNumber: string;
   name: string;
   price: number;
   quantity: number;
@@ -16,18 +17,20 @@ export interface CartItem {
 
 export interface MenuItem {
   id: string;
+  itemNumber: string;
   name: string;
-  shortCode: string;
-  sku: string;
-  barcode?: string;
+  categoryId: string;
   price: number;
+  gst: number;
   itemType: 'KITCHEN' | 'PACKED';
   isAvailable: boolean;
-  categoryId: string;
+  image?: string | null;
+  barcode?: string;
+  shortCode: string;
+  sku: string;
   prepTime?: number;
   isFeatured?: boolean;
   isPopular?: boolean;
-  image?: string | null;
 }
 
 export interface Category {
@@ -113,7 +116,7 @@ export const useBillingStore = create<BillingState>()(
           return { cart: state.cart.map((c) => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c) };
         }
         return {
-          cart: [...state.cart, { id: item.id, name: item.name, price: item.price, quantity: 1, itemType: item.itemType, gstPercentage: 5, instructions: '', image: item.image }],
+          cart: [...state.cart, { id: item.id, itemNumber: item.itemNumber, name: item.name, price: item.price, quantity: 1, itemType: item.itemType, gstPercentage: item.gst, instructions: '', image: item.image }],
         };
       }),
       removeFromCart: (itemId) => set((state) => {
@@ -155,8 +158,19 @@ export const useBillingStore = create<BillingState>()(
       }),
       clearRecentSearches: () => set({ recentSearches: [] }),
       barcodeScan: (code) => {
-        const item = get().menuItems.find((m) => m.barcode === code);
-        if (item && item.isAvailable) { get().addToCart(item); return true; }
+        const q = code.toLowerCase().trim();
+        const matches = get().menuItems.filter((m) => 
+          (m.barcode && m.barcode.toLowerCase() === q) || 
+          (m.itemNumber && m.itemNumber.toLowerCase() === q) ||
+          (m.itemNumber && m.itemNumber.toLowerCase() === `m${q}`)
+        );
+        if (matches.length > 0) {
+          const available = matches.find(m => m.isAvailable) || matches[0];
+          if (available && available.isAvailable) {
+            get().addToCart(available);
+            return true;
+          }
+        }
         return false;
       },
       clearCart: () => set({
@@ -195,6 +209,9 @@ export const useBillingStore = create<BillingState>()(
             itemType: m.itemType,
             isAvailable: m.isAvailable,
             categoryId: m.categoryId,
+            itemNumber: m.itemNumber,
+            gst: Number(m.gst) || 5,
+            gstPercentage: Number(m.gst) || 5,
             prepTime: m.itemType === 'KITCHEN' ? 10 : 0
           }));
 

@@ -5,6 +5,8 @@
  * internet connectivity. Background sync will automatically replay
  * the queue when connectivity is restored.
  */
+import { useAuthStore } from '../store/auth.store';
+import { api } from '../api/axios';
 
 interface QueuedOrder {
   id: string; // client-generated uuid to prevent dupes
@@ -87,13 +89,13 @@ class OfflineQueueService {
 
       for (const order of orders) {
         try {
-          const res = await fetch('/api/billing/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': order.id },
-            body: JSON.stringify(order.payload),
+          const res = await api.post('/billing/orders', order.payload, {
+            headers: {
+              'X-Idempotency-Key': order.id,
+            }
           });
 
-          if (res.ok) {
+          if (res.status === 200 || res.status === 201) {
             // Successfully replayed -> remove from IndexedDB
             await this.removeFromQueue(order.id);
           }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useWeather } from '../../hooks/useWeather';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
@@ -68,12 +69,18 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer);
   }, []);
 
+  const { data: weather, isLoading: weatherLoading } = useWeather();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDate(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const businessInfo = {
     restaurantName: "Express Diner",
-    businessDate: "July 13, 2026",
     currentShift: "Morning Shift (08:00 AM - 04:00 PM)",
     cashierName: "Admin User",
-    weather: "Partly Cloudy • 29°C"
   };
 
   const stats = {
@@ -163,6 +170,9 @@ export default function AdminDashboard() {
 
   if (loading) return <DashboardSkeleton />;
 
+  const formattedDate = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const formattedTime = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+
   return (
     <div className="space-y-8 animate-fadeIn p-4 md:p-6 lg:p-8">
       {/* ── HEADER & WELCOME BANNER ── */}
@@ -184,13 +194,40 @@ export default function AdminDashboard() {
           </div>
           
           <div className="flex flex-wrap items-center gap-4 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm p-4 rounded-2xl border border-border shrink-0 shadow-sm">
-            <div className="text-right border-r border-border pr-4">
+            <div className="text-right border-r border-border pr-4 min-w-[120px]">
               <p className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground">Business Date</p>
-              <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{businessInfo.businessDate}</p>
+              <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{formattedDate}</p>
+              <p className="text-[10px] font-bold text-gray-500 mt-0.5">{formattedTime}</p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground">Local Weather</p>
-              <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{businessInfo.weather}</p>
+            <div className="text-right min-w-[200px]">
+              <p className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground border-b border-border/50 pb-1 mb-2">Local Weather</p>
+              {weatherLoading ? (
+                <div className="flex flex-col items-end gap-1.5 mt-1">
+                  <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
+                  <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
+                  <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
+                </div>
+              ) : weather ? (
+                <div className="flex flex-col items-end">
+                  <p className="text-xs font-bold text-gray-500 flex items-center gap-1 mb-1">
+                    📍 {weather.location}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="weather" className="w-12 h-12 -my-2" />
+                    <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{weather.temperature}°C</p>
+                  </div>
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1">{weather.condition}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-[10px] font-bold text-gray-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Humidity: {weather.humidity}%</span>
+                    <span className="text-[10px] font-bold text-gray-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Wind: {weather.windSpeed} km/h</span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-gray-400 mt-2">
+                    Last Updated: {new Date(weather.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">Unavailable</p>
+              )}
             </div>
           </div>
         </div>

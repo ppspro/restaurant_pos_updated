@@ -38,5 +38,9 @@ router.use('/customers', customersRouter);
 router.use('/notifications', notificationsRouter);
 router.use('/admin', adminRouter);
 router.use('/audit', auditRouter);
+import systemRouter from '../modules/system/routes/system.routes';
+import healthRouter from '../modules/health/routes/health.routes';
+router.use('/system', systemRouter);
+router.use('/health', healthRouter);
 
 export default router;

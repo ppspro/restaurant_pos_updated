@@ -152,9 +152,8 @@ async function main() {
   // 5. Seed Printers
   const receiptPrinter = await prisma.printer.create({
     data: {
-      name: 'Front Receipt Printer',
-      type: 'ESC_POS',
-      connectionType: 'NETWORK',
+      printerName: 'Front Receipt Printer',
+      printerType: 'ESC_POS',
       ipAddress: '192.168.1.100',
       port: 9100,
       paperWidth: '80mm',
@@ -165,9 +164,8 @@ async function main() {
 
   const kitchenPrinter = await prisma.printer.create({
     data: {
-      name: 'Kitchen KOT Printer',
-      type: 'ESC_POS',
-      connectionType: 'NETWORK',
+      printerName: 'Kitchen KOT Printer',
+      printerType: 'ESC_POS',
       ipAddress: '192.168.1.101',
       port: 9100,
       paperWidth: '80mm',
@@ -178,9 +176,8 @@ async function main() {
 
   const backupPrinter = await prisma.printer.create({
     data: {
-      name: 'Billing Backup Printer',
-      type: 'BROWSER',
-      connectionType: 'USB',
+      printerName: 'Billing Backup Printer',
+      printerType: 'BROWSER',
       location: 'BACKUP',
       status: 'ONLINE',
     },
@@ -420,10 +417,15 @@ async function main() {
     return found.id;
   };
 
+  let menuIndex = 1;
   for (const item of rawMenuData) {
     const itemType = (item.category === 'Colddrink' || item.category === 'Beverages') ? ItemType.PACKED : ItemType.KITCHEN;
+    const itemNum = `M${String(menuIndex).padStart(4, '0')}`;
+    menuIndex++;
+    
     await prisma.menuItem.create({
       data: {
+        itemNumber: itemNum,
         name: item.name,
         price: item.price,
         itemType: itemType,

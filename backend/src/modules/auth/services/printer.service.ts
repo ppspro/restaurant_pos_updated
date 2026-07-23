@@ -4,7 +4,7 @@ import { BadRequestError } from '../../../shared/errors/badRequestError';
 export class PrinterService {
   static async list() {
     return prisma.printer.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { printerName: 'asc' },
     });
   }
 
@@ -20,7 +20,7 @@ export class PrinterService {
     // Mock print success
     return {
       success: true,
-      name: printer.name,
+      name: printer.printerName,
       diagnostic: `Successful mock print payload sent over ESC/POS standard (Paper Width: ${printer.paperWidth}). Connection OK.`,
       timestamp: new Date(),
     };
@@ -30,7 +30,7 @@ export class PrinterService {
     const printers = await prisma.printer.findMany();
     return printers.map((p) => ({
       id: p.id,
-      name: p.name,
+      name: p.printerName,
       status: p.status,
       latencyMs: p.status === 'ONLINE' ? Math.floor(Math.random() * 20) + 5 : 0,
     }));

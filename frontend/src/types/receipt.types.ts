@@ -2,6 +2,7 @@
 export type PaperSize = '58mm' | '80mm' | 'A4';
 
 export interface ReceiptItem {
+  itemNumber: string;
   name: string;
   quantity: number;
   unitPrice: number;

@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { SessionService } from '../services/session.service';
 import { ApiResponse } from '../../../shared/helpers/apiResponse';
 import prisma from '../../../prisma/client';
+import { logger } from '../../../shared/logger';
 
 export class AuthController {
   static async login(req: Request, res: Response, next: NextFunction) {
@@ -14,6 +15,7 @@ export class AuthController {
       const result = await AuthService.login(username, password, ipAddress, userAgent);
       return ApiResponse.success(res, result, 'Login successful');
     } catch (error) {
+      logger.error(`Authentication error for user ${req.body?.username}`, error);
       next(error);
     }
   }

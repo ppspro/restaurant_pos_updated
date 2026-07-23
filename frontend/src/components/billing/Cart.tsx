@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBillingStore } from '../../store/billing.store';
+import { useAuthStore } from '../../store/auth.store';
+import { api } from '../../api/axios';
 import { Button } from '../ui/button';
 import {
   ShoppingCart, Trash2, Plus, Minus, CreditCard, Landmark,
@@ -11,10 +13,10 @@ import { PaymentDialog } from './PaymentDialog';
 import { ReceiptPreview } from './ReceiptPreview';
 import type { ReceiptBundle, ReceiptItem } from '../../types/receipt.types';
 
-// Demo cashier ID
-const CASHIER_ID = 'demo-cashier-001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 export const Cart = () => {
+  const cashierId = useAuthStore.getState().user?.id ?? '';
   const {
     cart,
     discountType,
@@ -116,32 +118,28 @@ export const Cart = () => {
     setApiError('');
 
     try {
-      // Call the real Order Creation API
-      const response = await fetch('/api/billing/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cashierId: CASHIER_ID,
-          items: cart.map(c => ({
-            menuItemId: c.id,
-            itemName: c.name,
-            quantity: c.quantity,
-            unitPrice: c.price,
-            gst: c.gstPercentage,
-            itemType: c.itemType,
-            notes: c.instructions || undefined,
-          })),
-          subtotal,
-          gstAmount,
-          discount: discountAmount,
-          grandTotal: total,
-          paymentMethod: paymentMethod ?? 'CASH',
-          receivedCash: receivedCashAmount || undefined,
-          transactionReference: transactionReference || undefined,
-        }),
+      // Call the real Order Creation API via interceptored axios client
+      const response = await api.post('/billing/orders', {
+        cashierId,
+        items: cart.map(c => ({
+          menuItemId: c.id,
+          itemName: c.name,
+          quantity: c.quantity,
+          unitPrice: c.price,
+          gst: c.gstPercentage,
+          itemType: c.itemType,
+          notes: c.instructions || undefined,
+        })),
+        subtotal,
+        gstAmount,
+        discount: discountAmount,
+        grandTotal: total,
+        paymentMethod: paymentMethod ?? 'CASH',
+        receivedCash: receivedCashAmount || undefined,
+        transactionReference: transactionReference || undefined,
       });
 
-      const result = await response.json();
+      const result = response.data;
 
       if (!result.success) {
         throw new Error(result.message || 'Order creation failed');
@@ -154,12 +152,13 @@ export const Cart = () => {
 
       // Build receipt bundle from current cart state
       const receiptItems: ReceiptItem[] = cart.map(c => ({
+        itemNumber: c.itemNumber,
         name: c.name,
         quantity: c.quantity,
         unitPrice: c.price,
-        lineTotal: c.price * c.quantity,
+        lineTotal: (c.price + c.price * (c.gstPercentage / 100)) * c.quantity,
         itemType: c.itemType,
-        instructions: c.instructions,
+        instructions: c.instructions
       }));
 
       const today = new Date().toLocaleDateString('en-IN');
@@ -286,7 +285,7 @@ export const Cart = () => {
               <span className="block border-b pb-1 font-bold text-gray-700 dark:text-gray-300">Kitchen KOT</span>
               {cart.filter(c => c.itemType === 'KITCHEN').map(c => (
                 <div key={c.id} className="flex justify-between mt-1">
-                  <span>{c.name} x{c.quantity}</span>
+                  <span>{c.itemNumber} {c.name} x{c.quantity}</span>
                   <span className="text-gray-400 text-[10px] italic">{c.instructions || ''}</span>
                 </div>
               ))}
@@ -364,12 +363,13 @@ export const Cart = () => {
                 <div className="flex gap-2 items-center flex-1 min-w-0">
                   <div className="h-8 w-8 rounded overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <img 
-                      src={item.image ? `http://localhost:5000${item.image}` : '/images/default-food.png'} 
+                      src={item.image ? `${API_BASE_URL}${item.image}` : '/images/default-food.png'} 
                       alt={item.name} 
                       className="h-full w-full object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
+                    <span className="font-mono text-[10px] font-black tracking-wider text-slate-500">{item.itemNumber}</span>
                     <span className="block text-xs font-bold text-gray-900 dark:text-white truncate">{item.name}</span>
                     <span className="text-[10px] text-gray-400 font-mono mt-0.5">₹{item.price.toFixed(2)}</span>
                   </div>

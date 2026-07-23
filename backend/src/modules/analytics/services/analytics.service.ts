@@ -539,7 +539,7 @@ export class AnalyticsService {
       await prisma.$queryRaw`SELECT 1`;
       const dbStatus = 'UP';
       
-      const printers = await prisma.printer.findMany({ select: { id: true, name: true, status: true, location: true } });
+      const printers = await prisma.printer.findMany({ select: { id: true, printerName: true, status: true, location: true } });
       const terminals = await prisma.terminal.findMany({ select: { id: true, terminalName: true, status: true } });
       const cashDrawers = await prisma.cashDrawer.findMany({ select: { id: true, drawerCode: true, status: true, currentBalance: true } });
       const activeShifts = await prisma.cashierShift.findMany({ 

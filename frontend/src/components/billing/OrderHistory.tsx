@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useBillingStore } from '../../store/billing.store';
 import type { CompletedOrder } from '../../store/billing.store';
+import { useAuthStore } from '../../store/auth.store';
+import { api } from '../../api/axios';
 import { ReceiptPreview } from './ReceiptPreview';
 import { Button } from '../ui/button';
 import { Clock, Coins, Landmark, CreditCard, Printer, X, AlertTriangle } from 'lucide-react';
-
-const CASHIER_ID = 'demo-cashier-001'; // Will be replaced by auth context
 
 export const OrderHistory = () => {
   const { completedOrders } = useBillingStore();
@@ -32,15 +32,14 @@ export const OrderHistory = () => {
     if (!cancelTarget || !cancelReason.trim()) return;
     setCancelling(true);
     setCancelError('');
+    const userId = useAuthStore.getState().user?.id ?? '';
 
     try {
-      const res = await fetch(`/api/billing/orders/${cancelTarget.orderId}/cancel`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: cancelReason, userId: CASHIER_ID }),
+      const response = await api.put(`/billing/orders/${cancelTarget.orderId}/cancel`, {
+        reason: cancelReason,
+        userId,
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message);
+      if (!response.data.success) throw new Error(response.data.message);
       setCancelTarget(null);
       setCancelReason('');
     } catch (err: unknown) {

@@ -5,7 +5,7 @@ import { AuditAction } from '@prisma/client';
 
 export class UserService {
   static async createUser(data: any, auditorId: string, ipAddress?: string, userAgent?: string) {
-    const { fullName, username, email, phone, password, role, status, terminalId } = data;
+    const { fullName, username, email, phone, password, role, status } = data;
 
     // Validate unique constraints
     const existingUser = await prisma.user.findFirst({
@@ -37,7 +37,6 @@ export class UserService {
         password: hashedPassword,
         roleId: roleRecord.id,
         status: status || 'ACTIVE',
-        terminalId: terminalId || null,
       },
     });
 
@@ -70,7 +69,6 @@ export class UserService {
         lastLogin: true,
         createdAt: true,
         role: { select: { name: true } },
-        terminal: { select: { terminalName: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -88,7 +86,6 @@ export class UserService {
         status: true,
         lastLogin: true,
         createdAt: true,
-        terminalId: true,
         deletedAt: true,
         role: { select: { name: true } },
       },
@@ -108,7 +105,7 @@ export class UserService {
       throw new BadRequestError('User not found');
     }
 
-    const { fullName, username, email, phone, role, status, terminalId } = data;
+    const { fullName, username, email, phone, role, status } = data;
 
     // Validate unique if changing
     if (username !== user.username || email !== user.email) {
@@ -140,7 +137,6 @@ export class UserService {
         phone: phone !== undefined ? phone : user.phone,
         roleId,
         status: status || user.status,
-        terminalId: terminalId !== undefined ? terminalId : user.terminalId,
       },
     });
 

@@ -15,7 +15,7 @@ interface MenuFormModalProps {
   initialData?: any;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
   return centerCrop(
@@ -29,6 +29,7 @@ export default function MenuFormModal({ isOpen, onClose, onSuccess, categories, 
   const { notify } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
+    itemNumber: initialData?.itemNumber || '',
     name: initialData?.name || '',
     categoryId: initialData?.categoryId || '',
     price: initialData?.price || '',
@@ -169,6 +170,17 @@ export default function MenuFormModal({ isOpen, onClose, onSuccess, categories, 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Item No. (SKU)</label>
+                <input
+                  type="text"
+                  value={formData.itemNumber}
+                  onChange={(e) => setFormData({ ...formData, itemNumber: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-xl dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-300"
+                  placeholder="Auto-generated if left blank"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Item Name *</label>
                 <input

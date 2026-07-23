@@ -1,52 +1,10 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
 datasource db {
   provider = "postgresql"
-}
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum UserRole {
-  SUPER_ADMIN
-  CASHIER
-}
-
-enum ItemType {
-  KITCHEN
-  PACKED
-}
-
-enum PaymentMethod {
-  CASH
-  UPI
-  CARD
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCESS
-  FAILED
-  REFUNDED
-}
-
-enum OrderStatus {
-  DRAFT
-  PAID
-  PRINTED
-  PREPARING
-  READY
-  COMPLETED
-  CANCELLED
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-  LOGIN
-  LOGOUT
-  PRINT
-  CANCEL
 }
 
 model User {
@@ -59,18 +17,16 @@ model User {
   roleId        String         @db.Uuid
   status        String         @default("ACTIVE") @db.VarChar(20)
   profileImage  String?        @db.VarChar(255)
-  terminalId    String?        @db.Uuid
   lastLogin     DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
-  role          Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  terminal      Terminal?      @relation(fields: [terminalId], references: [id], onDelete: SetNull)
-  orders        Order[]
   auditLogs     AuditLog[]
+  cashierShifts CashierShift[]
+  orders        Order[]
   refreshTokens RefreshToken[]
   userSessions  UserSession[]
-  cashierShifts CashierShift[]
+  role          Role           @relation(fields: [roleId], references: [id])
 
   @@index([username])
   @@index([email])
@@ -107,7 +63,8 @@ model MenuItem {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  itemNumber  String      @unique @db.VarChar(50)
+  category    Category    @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
 
   @@index([categoryId])
@@ -135,11 +92,11 @@ model Order {
   completedAt    DateTime?
   cancelledAt    DateTime?
   customerId     String?       @db.Uuid
-  cashier        User          @relation(fields: [cashierId], references: [id], onDelete: Restrict)
-  businessDay    BusinessDay?  @relation(fields: [businessDayId], references: [id], onDelete: Restrict)
-  cashierShift   CashierShift? @relation(fields: [cashierShiftId], references: [id], onDelete: Restrict)
-  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   orderItems     OrderItem[]
+  businessDay    BusinessDay?  @relation(fields: [businessDayId], references: [id], onDelete: Restrict)
+  cashier        User          @relation(fields: [cashierId], references: [id])
+  cashierShift   CashierShift? @relation(fields: [cashierShiftId], references: [id], onDelete: Restrict)
+  customer       Customer?     @relation(fields: [customerId], references: [id])
   payment        Payment?
 
   @@unique([tokenNumber, businessDate])
@@ -165,8 +122,8 @@ model OrderItem {
   itemType   ItemType
   notes      String?  @db.VarChar(255)
   createdAt  DateTime @default(now())
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([menuItemId])
@@ -192,18 +149,25 @@ model Payment {
 }
 
 model RestaurantSettings {
-  id             String   @id @default(uuid()) @db.Uuid
-  restaurantName String   @db.VarChar(100)
-  address        String   @db.VarChar(255)
-  phone          String   @db.VarChar(20)
-  email          String   @db.VarChar(100)
-  gstNumber      String   @db.VarChar(20)
-  currency       String   @default("INR") @db.VarChar(10)
-  timezone       String   @default("Asia/Kolkata") @db.VarChar(50)
-  logo           String?  @db.VarChar(255)
-  receiptFooter  String?  @db.VarChar(255)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(uuid()) @db.Uuid
+  restaurantName  String   @db.VarChar(100)
+  address         String   @db.VarChar(255)
+  phone           String   @db.VarChar(20)
+  email           String   @db.VarChar(100)
+  gstNumber       String   @db.VarChar(20)
+  currency        String   @default("INR") @db.VarChar(10)
+  timezone        String   @default("Asia/Kolkata") @db.VarChar(50)
+  logo            String?  @db.VarChar(255)
+  receiptFooter   String?  @db.VarChar(255)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  city            String?  @db.VarChar(100)
+  country         String?  @db.VarChar(100)
+  latitude        Decimal? @db.Decimal(10, 8)
+  longitude       Decimal? @db.Decimal(11, 8)
+  temperatureUnit String   @default("C") @db.VarChar(1)
+  weatherEnabled  Boolean  @default(true)
+  state           String?  @db.VarChar(100)
 
   @@map("restaurant_settings")
 }
@@ -229,7 +193,7 @@ model AuditLog {
   ipAddress   String?     @db.VarChar(45)
   userAgent   String?     @db.VarChar(255)
   createdAt   DateTime    @default(now())
-  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?       @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
@@ -259,8 +223,8 @@ model Role {
   description String?          @db.VarChar(255)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-  users       User[]
   permissions RolePermission[]
+  users       User[]
 
   @@map("roles")
 }
@@ -279,8 +243,8 @@ model Permission {
 model RolePermission {
   roleId       String     @db.Uuid
   permissionId String     @db.Uuid
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
@@ -325,19 +289,18 @@ model Terminal {
   terminalName     String         @db.VarChar(100)
   location         String?        @db.VarChar(100)
   deviceId         String?        @db.VarChar(100)
-  status           String         @default("OFFLINE") @db.VarChar(20) // ONLINE, OFFLINE, BUSY
+  status           String         @default("OFFLINE") @db.VarChar(20)
   lastHeartbeat    DateTime?
   receiptPrinterId String?        @db.Uuid
   kitchenPrinterId String?        @db.Uuid
   backupPrinterId  String?        @db.Uuid
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-  shifts           CashierShift[]
   cashDrawer       CashDrawer?
-  receiptPrinter   Printer?       @relation("ReceiptPrinter", fields: [receiptPrinterId], references: [id], onDelete: SetNull)
-  kitchenPrinter   Printer?       @relation("KitchenPrinter", fields: [kitchenPrinterId], references: [id], onDelete: SetNull)
-  backupPrinter    Printer?       @relation("BackupPrinter", fields: [backupPrinterId], references: [id], onDelete: SetNull)
-  users            User[]
+  shifts           CashierShift[]
+  backupPrinter    Printer?       @relation("BackupPrinter", fields: [backupPrinterId], references: [id])
+  kitchenPrinter   Printer?       @relation("KitchenPrinter", fields: [kitchenPrinterId], references: [id])
+  receiptPrinter   Printer?       @relation("ReceiptPrinter", fields: [receiptPrinterId], references: [id])
 
   @@map("terminals")
 }
@@ -352,14 +315,14 @@ model CashierShift {
   openingCash    Decimal      @db.Decimal(10, 2)
   closingCash    Decimal?     @db.Decimal(10, 2)
   cashDifference Decimal?     @db.Decimal(10, 2)
-  status         String       @default("OPEN") @db.VarChar(20) // OPEN, CLOSED
+  status         String       @default("OPEN") @db.VarChar(20)
   notes          String?      @db.VarChar(255)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  terminal       Terminal     @relation(fields: [terminalId], references: [id], onDelete: Restrict)
-  businessDay    BusinessDay? @relation(fields: [businessDayId], references: [id], onDelete: Restrict)
   cashDrawer     CashDrawer?
+  businessDay    BusinessDay? @relation(fields: [businessDayId], references: [id], onDelete: Restrict)
+  terminal       Terminal     @relation(fields: [terminalId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
   orders         Order[]
 
   @@map("cashier_shifts")
@@ -372,36 +335,27 @@ model BusinessDay {
   closedBy     String?        @db.Uuid
   openedAt     DateTime       @default(now())
   closedAt     DateTime?
-  status       String         @default("OPEN") @db.VarChar(20) // OPEN, CLOSED
-  orders       Order[]
+  status       String         @default("OPEN") @db.VarChar(20)
   shifts       CashierShift[]
+  orders       Order[]
 
   @@map("business_days")
 }
 
 model Printer {
   id              String     @id @default(uuid()) @db.Uuid
-  name            String     @db.VarChar(100)
-  type            String     @db.VarChar(50) 
-  brand           String?    @db.VarChar(50)
-  model           String?    @db.VarChar(50)
-  connectionType  String     @db.VarChar(20)
+  printerName     String     @db.VarChar(100)
+  printerType     String     @db.VarChar(50)
   ipAddress       String?    @db.VarChar(45)
   port            Int?       @default(9100)
   paperWidth      String     @default("80mm") @db.VarChar(10)
   location        String     @db.VarChar(100)
-  terminalId      String?    @db.Uuid
   status          String     @default("ONLINE") @db.VarChar(20)
-  autoPrint       Boolean    @default(true)
-  printReceipt    Boolean    @default(true)
-  printKOT        Boolean    @default(true)
-  printInvoice    Boolean    @default(false)
-  notes           String?    @db.Text
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
-  receiptTerminal Terminal[] @relation("ReceiptPrinter")
-  kitchenTerminal Terminal[] @relation("KitchenPrinter")
   backupTerminal  Terminal[] @relation("BackupPrinter")
+  kitchenTerminal Terminal[] @relation("KitchenPrinter")
+  receiptTerminal Terminal[] @relation("ReceiptPrinter")
 
   @@map("printers")
 }
@@ -416,12 +370,12 @@ model CashDrawer {
   expectedClosingBalance Decimal           @db.Decimal(10, 2)
   actualClosingBalance   Decimal?          @db.Decimal(10, 2)
   difference             Decimal?          @db.Decimal(10, 2)
-  status                 String            @default("CLOSED") @db.VarChar(20) // OPEN, CLOSED, LOCKED
+  status                 String            @default("CLOSED") @db.VarChar(20)
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
-  terminal               Terminal          @relation(fields: [terminalId], references: [id], onDelete: Restrict)
-  cashierShift           CashierShift?     @relation(fields: [cashierShiftId], references: [id], onDelete: SetNull)
   events                 CashDrawerEvent[]
+  cashierShift           CashierShift?     @relation(fields: [cashierShiftId], references: [id])
+  terminal               Terminal          @relation(fields: [terminalId], references: [id])
 
   @@map("cash_drawers")
 }
@@ -430,7 +384,7 @@ model CashDrawerEvent {
   id           String     @id @default(uuid()) @db.Uuid
   cashDrawerId String     @db.Uuid
   userId       String?    @db.Uuid
-  eventType    String     @db.VarChar(50) // OPEN, CLOSE, MANUAL_OPEN, ADD_CASH, REMOVE_CASH
+  eventType    String     @db.VarChar(50)
   amount       Decimal?   @db.Decimal(10, 2)
   reason       String?    @db.VarChar(255)
   createdAt    DateTime   @default(now())
@@ -439,10 +393,6 @@ model CashDrawerEvent {
   @@index([cashDrawerId])
   @@map("cash_drawer_events")
 }
-
-// ==========================================
-// INVENTORY MODULE
-// ==========================================
 
 model InventoryCategory {
   id          String       @id @default(uuid()) @db.Uuid
@@ -493,9 +443,9 @@ model Ingredient {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   deletedAt     DateTime?
-  category      InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  movements     StockMovement[]
+  category      InventoryCategory @relation(fields: [categoryId], references: [id])
   purchaseItems PurchaseItem[]
+  movements     StockMovement[]
 
   @@index([categoryId])
   @@index([name])
@@ -506,15 +456,15 @@ model PurchaseOrder {
   id           String         @id @default(uuid()) @db.Uuid
   poNumber     String         @unique @db.VarChar(50)
   vendorId     String         @db.Uuid
-  status       String         @default("PENDING") @db.VarChar(20) // PENDING, RECEIVED, CANCELLED
+  status       String         @default("PENDING") @db.VarChar(20)
   totalAmount  Decimal        @default(0.00) @db.Decimal(12, 2)
   expectedDate DateTime?      @db.Date
   receivedDate DateTime?      @db.Date
   notes        String?        @db.VarChar(255)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  vendor       Vendor         @relation(fields: [vendorId], references: [id], onDelete: Restrict)
   items        PurchaseItem[]
+  vendor       Vendor         @relation(fields: [vendorId], references: [id])
 
   @@index([vendorId])
   @@index([poNumber])
@@ -529,8 +479,8 @@ model PurchaseItem {
   unitPrice       Decimal       @db.Decimal(10, 2)
   totalPrice      Decimal       @db.Decimal(12, 2)
   createdAt       DateTime      @default(now())
+  ingredient      Ingredient    @relation(fields: [ingredientId], references: [id])
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  ingredient      Ingredient    @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
 
   @@index([purchaseOrderId])
   @@index([ingredientId])
@@ -540,45 +490,37 @@ model PurchaseItem {
 model StockMovement {
   id           String     @id @default(uuid()) @db.Uuid
   ingredientId String     @db.Uuid
-  type         String     @db.VarChar(20) // IN, OUT, ADJUST, WASTE, SALE
+  type         String     @db.VarChar(20)
   quantity     Decimal    @db.Decimal(10, 3)
   reason       String?    @db.VarChar(255)
-  referenceId  String?    @db.VarChar(50) // PO number or Order ID
+  referenceId  String?    @db.VarChar(50)
   createdAt    DateTime   @default(now())
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
 
   @@index([ingredientId])
   @@index([type])
   @@map("stock_movements")
 }
 
-// ==========================================
-// CUSTOMER & LOYALTY MODULE
-// ==========================================
-
 model Customer {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String    @db.VarChar(100)
-  mobileNumber String    @unique @db.VarChar(20)
-  email        String?   @db.VarChar(100)
-  dateOfBirth  DateTime? @db.Date
-  anniversary  DateTime? @db.Date
-  gender       String?   @db.VarChar(20)
-  address      String?   @db.VarChar(255)
-  gstNumber    String?   @db.VarChar(50)
-  status       String    @default("ACTIVE") @db.VarChar(20)
-  notes        String?   @db.VarChar(255)
-
-  // Loyalty
-  totalPoints Decimal @default(0.00) @db.Decimal(10, 2)
-  rewardTier  String  @default("BRONZE") @db.VarChar(20) // BRONZE, SILVER, GOLD, PLATINUM
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  orders       Order[]
+  id           String               @id @default(uuid()) @db.Uuid
+  name         String               @db.VarChar(100)
+  mobileNumber String               @unique @db.VarChar(20)
+  email        String?              @db.VarChar(100)
+  dateOfBirth  DateTime?            @db.Date
+  anniversary  DateTime?            @db.Date
+  gender       String?              @db.VarChar(20)
+  address      String?              @db.VarChar(255)
+  gstNumber    String?              @db.VarChar(50)
+  status       String               @default("ACTIVE") @db.VarChar(20)
+  notes        String?              @db.VarChar(255)
+  totalPoints  Decimal              @default(0.00) @db.Decimal(10, 2)
+  rewardTier   String               @default("BRONZE") @db.VarChar(20)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  deletedAt    DateTime?
   transactions LoyaltyTransaction[]
+  orders       Order[]
 
   @@index([mobileNumber])
   @@index([name])
@@ -588,39 +530,30 @@ model Customer {
 model LoyaltyTransaction {
   id         String   @id @default(uuid()) @db.Uuid
   customerId String   @db.Uuid
-  orderId    String?  @db.VarChar(50) // Reference to order, not strictly foreign key to avoid circular/cascade issues
-  type       String   @db.VarChar(20) // EARN, REDEEM, EXPIRE, CLAWBACK
+  orderId    String?  @db.VarChar(50)
+  type       String   @db.VarChar(20)
   points     Decimal  @db.Decimal(10, 2)
   reason     String?  @db.VarChar(255)
   createdAt  DateTime @default(now())
-
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([type])
   @@map("loyalty_transactions")
 }
 
-// ==========================================
-// NOTIFICATIONS MODULE
-// ==========================================
-
 model Notification {
-  id       String @id @default(uuid()) @db.Uuid
-  title    String @db.VarChar(150)
-  message  String @db.Text
-  type     String @db.VarChar(50) // SYSTEM, INVENTORY, KITCHEN, SHIFT
-  priority String @default("MEDIUM") @db.VarChar(20) // CRITICAL, HIGH, MEDIUM, LOW
-
-  // Targeting
-  userId String? @db.Uuid
-  roleId String? @db.Uuid // Broadcaster for specific roles
-
-  isRead     Boolean @default(false)
-  isArchived Boolean @default(false)
-
-  createdAt DateTime  @default(now())
-  readAt    DateTime?
+  id         String    @id @default(uuid()) @db.Uuid
+  title      String    @db.VarChar(150)
+  message    String
+  type       String    @db.VarChar(50)
+  priority   String    @default("MEDIUM") @db.VarChar(20)
+  userId     String?   @db.Uuid
+  roleId     String?   @db.Uuid
+  isRead     Boolean   @default(false)
+  isArchived Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
 
   @@index([userId])
   @@index([roleId])
@@ -629,30 +562,24 @@ model Notification {
 }
 
 model NotificationPreference {
-  id               String  @id @default(uuid()) @db.Uuid
-  userId           String  @db.Uuid
-  receiveSystem    Boolean @default(true)
-  receiveInventory Boolean @default(true)
-  receiveKitchen   Boolean @default(true)
-  receiveShift     Boolean @default(true)
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @db.Uuid
+  receiveSystem    Boolean  @default(true)
+  receiveInventory Boolean  @default(true)
+  receiveKitchen   Boolean  @default(true)
+  receiveShift     Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId])
   @@map("notification_preferences")
 }
-
-// ==========================================
-// SYSTEM ADMINISTRATION MODULE
-// ==========================================
 
 model SystemBackup {
   id        String   @id @default(uuid()) @db.Uuid
   filename  String   @db.VarChar(255)
   filePath  String   @db.VarChar(500)
   fileSize  BigInt?
-  status    String   @default("PENDING") @db.VarChar(20) // PENDING, COMPLETED, FAILED
+  status    String   @default("PENDING") @db.VarChar(20)
   createdBy String?  @db.Uuid
   createdAt DateTime @default(now())
 
@@ -663,12 +590,55 @@ model SystemBackup {
 model LicenseKey {
   id          String    @id @default(uuid()) @db.Uuid
   licenseKey  String    @unique @db.VarChar(255)
-  status      String    @default("INACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, EXPIRED
-  features    String?   @db.Text // JSON string of enabled features
+  status      String    @default("INACTIVE") @db.VarChar(20)
+  features    String?
   expiresAt   DateTime?
   activatedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@map("license_keys")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  CASHIER
+}
+
+enum ItemType {
+  KITCHEN
+  PACKED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  DRAFT
+  PAID
+  PRINTED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PRINT
+  CANCEL
 }

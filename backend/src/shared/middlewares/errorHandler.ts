@@ -12,10 +12,17 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     err.message?.includes('Can\'t reach database server') ||
     err.message?.includes('Database connection failed')
   ) {
-    console.error('Database connection error:', err.message);
-    return res.status(503).send({ errors: [{ message: 'Database connection failed' }] });
+    console.error('Database connection error [TECHNICAL LOG]:', err);
+    return res.status(503).send({ errors: [{ message: 'The system is currently undergoing maintenance. Please try again later.' }] });
   }
 
-  console.error(err);
+  console.error('[Unhandled Error]:', err);
+
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(500).send({
+      errors: [{ message: err.message || 'Something went wrong', stack: err.stack }]
+    });
+  }
+
   res.status(500).send({ errors: [{ message: 'Something went wrong' }] });
 };

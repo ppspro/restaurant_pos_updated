@@ -71,15 +71,15 @@ export default function Printers() {
 
   const filteredPrinters = printers.filter(p => {
     const matchesSearch = 
-      p.name.toLowerCase().includes(search.toLowerCase()) || 
+      (p.printerName ?? '').toLowerCase().includes(search.toLowerCase()) || 
       (p.ipAddress && p.ipAddress.includes(search)) ||
-      p.location.toLowerCase().includes(search.toLowerCase());
+      (p.location ?? '').toLowerCase().includes(search.toLowerCase());
       
     const matchesFilter = filterType === 'All' 
       ? true 
-      : filterType === 'Online' ? p.status === 'Online'
-      : filterType === 'Offline' ? p.status === 'Offline'
-      : p.type.includes(filterType);
+      : filterType === 'Online' ? p.status === 'ONLINE'
+      : filterType === 'Offline' ? p.status === 'OFFLINE'
+      : (p.printerType ?? '').includes(filterType);
 
     return matchesSearch && matchesFilter;
   });
@@ -141,24 +141,22 @@ export default function Printers() {
             <Card key={p.id} className="border border-border bg-card rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group">
               <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
                 <CardTitle className="text-base font-extrabold flex items-center gap-2">
-                  <PrinterIcon className={`w-5 h-5 ${p.status === 'Online' ? 'text-blue-500' : 'text-gray-400'}`} />
-                  {p.name}
+                  <PrinterIcon className={`w-5 h-5 ${p.status === 'ONLINE' ? 'text-blue-500' : 'text-gray-400'}`} />
+                  {p.printerName}
                 </CardTitle>
-                <Badge className={p.status === 'Online' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-gray-500/10 text-gray-600 border border-gray-500/20'}>
-                  {p.status === 'Online' ? <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> : <AlertTriangle className="w-3.5 h-3.5 mr-1" />}
+                <Badge className={p.status === 'ONLINE' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-gray-500/10 text-gray-600 border border-gray-500/20'}>
+                  {p.status === 'ONLINE' ? <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> : <AlertTriangle className="w-3.5 h-3.5 mr-1" />}
                   {p.status}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-4 pt-4 flex-1 flex flex-col">
                 
                 <div className="flex items-center gap-2 mb-2">
-                   <Badge variant="outline" className="text-[10px] uppercase font-bold border-gray-200">{p.type}</Badge>
-                   {p.connectionType === 'Network' && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Network</Badge>}
+                   <Badge variant="outline" className="text-[10px] uppercase font-bold border-gray-200">{p.printerType}</Badge>
                 </div>
 
                 <div className="text-xs space-y-2.5 bg-slate-50/50 dark:bg-slate-950/20 p-3 rounded-xl border border-border flex-1">
                   <div className="flex justify-between"><span className="text-muted-foreground font-medium">Location:</span><span className="font-bold text-gray-900 dark:text-gray-100">{p.location}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground font-medium">Connection:</span><span className="font-bold text-gray-900 dark:text-gray-100">{p.connectionType}</span></div>
                   {p.ipAddress && (
                     <div className="flex justify-between"><span className="text-muted-foreground font-medium">IP Address:</span><span className="font-bold font-mono text-gray-900 dark:text-gray-100">{p.ipAddress}:{p.port}</span></div>
                   )}

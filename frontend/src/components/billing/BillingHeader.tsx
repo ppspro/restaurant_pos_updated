@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Clock, Calendar, User, Scan, History, ArrowRight } from 'lucide-react';
+import { Search, Clock, Calendar, User, Scan, History, ArrowRight, LogOut, Lock, Key, FileText, ChevronDown, Sun, Moon } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { useBillingStore } from '../../store/billing.store';
+import { useAuthStore } from '../../store/auth.store';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useTheme } from '../../theme/ThemeContext';
 
 export const BillingHeader = () => {
   const {
@@ -12,37 +16,86 @@ export const BillingHeader = () => {
     addRecentSearch,
     clearRecentSearches,
     barcodeScan,
+    cart,
+    clearCart,
   } = useBillingStore();
 
-  const [time, setTime] = useState<string>(new Date().toLocaleTimeString());
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  const [time, setTime] = useState<string>('');
+  const [businessDate, setBusinessDate] = useState<string>('Loading...');
   const [showHistory, setShowHistory] = useState<boolean>(false);
   const [simulatedBarcode, setSimulatedBarcode] = useState<string>('');
   const [scanStatus, setScanStatus] = useState<string>('');
+  
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Live clock
   useEffect(() => {
+    const formatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+    setTime(formatter.format(new Date()));
     const timer = setInterval(() => {
-      setTime(new Date().toLocaleTimeString());
+      setTime(formatter.format(new Date()));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Keyboard shortcut listener F1
+  // Fetch Business Date
+  useEffect(() => {
+    const fetchDate = async () => {
+      const fallbackDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date());
+      try {
+        const token = useAuthStore.getState().accessToken;
+        const response = await axios.get('/api/v1/auth/business-day/active', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data?.businessDate) {
+          const date = new Date(response.data.businessDate);
+          setBusinessDate(new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date));
+        } else {
+          setBusinessDate(fallbackDate);
+        }
+      } catch (e) {
+        setBusinessDate(fallbackDate);
+      }
+    };
+    fetchDate();
+  }, []);
+
+  // Keyboard shortcut listener F1 & Logout (Ctrl+Shift+L)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F1') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        setIsSignOutDialogOpen(true);
+        setIsProfileOpen(false);
+      }
+      if (e.key === 'Escape') {
+        setIsProfileOpen(false);
+        setIsSignOutDialogOpen(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Click outside history overlay
+  // Click outside history overlay and profile dropdown
   useEffect(() => {
     const clickOutside = (e: MouseEvent) => {
       if (
@@ -51,6 +104,9 @@ export const BillingHeader = () => {
         searchInputRef.current !== e.target
       ) {
         setShowHistory(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false);
       }
     };
     document.addEventListener('mousedown', clickOutside);
@@ -85,6 +141,30 @@ export const BillingHeader = () => {
     if (success) {
       setScanStatus(`Simulated Scan Success: Barcode ${chosen}`);
       setTimeout(() => setScanStatus(''), 2000);
+    }
+  };
+
+  const handleSignOutClick = () => {
+    setIsProfileOpen(false);
+    if (cart.length > 0) {
+      setLogoutError("You have items in the cart. Complete or clear the cart before signing out.");
+    } else {
+      setLogoutError('');
+    }
+    setIsSignOutDialogOpen(true);
+  };
+
+  const confirmSignOut = async () => {
+    if (cart.length > 0) return;
+    try {
+      await logout('End of Shift');
+      clearCart();
+      localStorage.clear();
+      sessionStorage.clear();
+      // Use window.location.href to force a full page reload, ensuring all in-memory React Query caches and Zustand stores are completely wiped.
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Logout failed:', err);
     }
   };
 
@@ -169,15 +249,73 @@ export const BillingHeader = () => {
         </Button>
       </div>
 
-      {/* Live Clock / Cashier */}
+      {/* Live Clock & User Profile */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-950/20 rounded-md border border-gray-100 dark:border-gray-800">
+        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-950/20 rounded-md border border-gray-100 dark:border-gray-800">
           <Calendar className="h-3.5 w-3.5 text-blue-500" />
-          <span>July 10, 2026</span>
+          <span className="font-medium">{businessDate}</span>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-950/20 rounded-md border border-gray-100 dark:border-gray-800">
-          <Clock className="h-3.5 w-3.5 text-green-500" />
-          <span className="font-mono">{time}</span>
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-950/20 rounded-md border border-gray-100 dark:border-gray-800 min-w-[100px] justify-center">
+          <Clock className="h-3.5 w-3.5 text-green-500 shrink-0" />
+          <span className="font-mono text-xs">{time}</span>
+        </div>
+
+        {/* Theme Toggle */}
+        <button 
+          onClick={toggleTheme}
+          aria-label="Toggle Theme"
+          className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-500 dark:text-gray-400 shrink-0"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+        
+        {/* User Profile Dropdown */}
+        <div className="relative" ref={profileRef}>
+          <button 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="flex flex-col items-start text-left">
+              <span className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                {user?.name || 'Cashier User'}
+              </span>
+              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 leading-tight">
+                {user?.role === 'SUPER_ADMIN' ? 'Administrator' : 'Cashier'}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 ml-1 text-gray-400" />
+          </button>
+
+          {isProfileOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl z-50 overflow-hidden py-2 animate-fade-in-down">
+              <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 mb-2">
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Signed In As</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user?.username || 'cashier'}</p>
+              </div>
+              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <User className="h-4 w-4" /> My Profile
+              </button>
+              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <Key className="h-4 w-4" /> Change Password
+              </button>
+              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <Lock className="h-4 w-4" /> Lock Screen
+              </button>
+              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <FileText className="h-4 w-4" /> Shift Details
+              </button>
+              <div className="h-px bg-gray-100 dark:bg-gray-800 my-2"></div>
+              <button 
+                onClick={handleSignOutClick}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -185,6 +323,43 @@ export const BillingHeader = () => {
       {scanStatus && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-blue-500 text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-md animate-fade-in-down">
           {scanStatus}
+        </div>
+      )}
+
+      {/* Sign Out Dialog */}
+      {isSignOutDialogOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-fade-in-up">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">End Shift & Sign Out</h2>
+            
+            {logoutError ? (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded-lg">
+                {logoutError}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to sign out?<br/>
+                Make sure all orders are completed before ending your shift.
+              </p>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsSignOutDialogOpen(false)}
+                className="font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmSignOut} 
+                disabled={cart.length > 0}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl"
+              >
+                Sign Out
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </header>

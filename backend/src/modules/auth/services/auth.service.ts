@@ -3,6 +3,7 @@ import { comparePassword, hashPassword } from '../../../shared/utils/password';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../../../shared/utils/jwt';
 import { BadRequestError } from '../../../shared/errors/badRequestError';
 import { UnauthorizedError } from '../../../shared/errors/unauthorizedError';
+import { ForbiddenError } from '../../../shared/errors/forbiddenError';
 import { LockoutService } from './lockout.service';
 import { SessionService } from './session.service';
 import { AuditService } from '../../../shared/services/audit.service';
@@ -33,7 +34,7 @@ export class AuthService {
     // 1. Check Lockout Status
     const lockout = await LockoutService.checkLockout(username, ipAddress);
     if (lockout.isLocked) {
-      throw new UnauthorizedError(`Account temporarily locked. Try again in ${lockout.remainingMinutes} minutes.`);
+      throw new ForbiddenError(`Account temporarily locked. Try again in ${lockout.remainingMinutes} minutes.`);
     }
 
     const user = await prisma.user.findFirst({

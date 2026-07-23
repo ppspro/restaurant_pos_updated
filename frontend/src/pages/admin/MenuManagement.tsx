@@ -3,10 +3,10 @@ import { categoryApi } from '../../api/category.api';
 import { menuApi } from '../../api/menu.api';
 import MenuFormModal from '../../components/admin/menu/MenuFormModal';
 import { Button } from '../../components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Upload } from 'lucide-react';
 import { useNotification } from '../../components/ui/GlobalNotificationProvider';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 export default function MenuManagement() {
   const { notify } = useNotification();
@@ -64,6 +64,42 @@ export default function MenuManagement() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      notify('info', 'Starting export...');
+      window.open(`${API_BASE_URL}/api/v1/menu/export`, '_blank');
+    } catch (error) {
+      notify('error', 'Export failed');
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      notify('info', 'Importing menu items...');
+      const res = await fetch(`${API_BASE_URL}/api/v1/menu/import`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        notify('success', `Imported ${data.imported}, Updated ${data.updated}. Errors: ${data.errors.length}`);
+        fetchData();
+      } else {
+        notify('error', data.message || 'Import failed');
+      }
+    } catch (error) {
+      notify('error', 'Import failed');
+    }
+    // reset file input
+    e.target.value = '';
+  };
+
   if (isLoading) {
     return <div className="p-8">Loading Menu Management...</div>;
   }
@@ -78,9 +114,20 @@ export default function MenuManagement() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Menu Management</h1>
           <p className="text-gray-500">Manage your restaurant categories and items here.</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Create Menu Item
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} className="flex items-center gap-2 border-gray-200">
+            <Download className="w-4 h-4" /> Export
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImport} />
+            <div className="h-10 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2">
+              <Upload className="w-4 h-4" /> Import
+            </div>
+          </label>
+          <Button onClick={handleCreate} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Create Menu Item
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -101,6 +148,7 @@ export default function MenuManagement() {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
@@ -122,6 +170,7 @@ export default function MenuManagement() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">{item.itemNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{category?.name || 'Unknown'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">₹{item.price}</td>

@@ -23,7 +23,6 @@ export interface CreateUserRequest {
   password?: string;
   role: string;
   status: string;
-  terminalId?: string;
 }
 
 export interface UpdateUserRequest extends Partial<CreateUserRequest> {}

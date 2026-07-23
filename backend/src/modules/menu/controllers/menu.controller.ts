@@ -5,7 +5,7 @@ import path from 'path';
 
 export const getMenuItems = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { categoryId, isAvailable } = req.query;
+    const { categoryId, isAvailable, search } = req.query;
     
     const whereClause: any = {};
     if (categoryId) {
@@ -16,6 +16,13 @@ export const getMenuItems = async (req: Request, res: Response, next: NextFuncti
     // If we only filter isAvailable when it's passed, it should be fine.
     if (isAvailable !== undefined) {
       whereClause.isAvailable = isAvailable === 'true';
+    }
+    if (search) {
+      const q = String(search).trim();
+      whereClause.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { itemNumber: { contains: q, mode: 'insensitive' } }
+      ];
     }
 
     const menuItems = await prisma.menuItem.findMany({
@@ -36,8 +43,24 @@ export const getMenuItems = async (req: Request, res: Response, next: NextFuncti
 export const createMenuItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, categoryId, price, gst, itemType, image, isAvailable } = req.body;
+    let finalItemNumber = req.body.itemNumber;
+
+    if (!finalItemNumber) {
+      const lastItem = await prisma.menuItem.findFirst({
+        where: { itemNumber: { startsWith: 'M' } },
+        orderBy: { itemNumber: 'desc' }
+      });
+      if (lastItem && lastItem.itemNumber) {
+        const lastNum = parseInt(lastItem.itemNumber.substring(1), 10);
+        finalItemNumber = `M${String(lastNum + 1).padStart(4, '0')}`;
+      } else {
+        finalItemNumber = 'M0001';
+      }
+    }
+
     const menuItem = await prisma.menuItem.create({
       data: {
+        itemNumber: finalItemNumber,
         name,
         categoryId,
         price,
@@ -56,7 +79,7 @@ export const createMenuItem = async (req: Request, res: Response, next: NextFunc
 export const updateMenuItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
-    const { name, categoryId, price, gst, itemType, image, isAvailable } = req.body;
+    const { itemNumber, name, categoryId, price, gst, itemType, image, isAvailable } = req.body;
 
     const existing = await prisma.menuItem.findUnique({ where: { id } });
     if (!existing) {
@@ -71,17 +94,22 @@ export const updateMenuItem = async (req: Request, res: Response, next: NextFunc
       }
     }
 
+    const updateData: any = {
+      name,
+      categoryId,
+      price,
+      gst,
+      itemType,
+      image,
+      isAvailable,
+    };
+    if (itemNumber) {
+      updateData.itemNumber = itemNumber;
+    }
+
     const menuItem = await prisma.menuItem.update({
       where: { id },
-      data: {
-        name,
-        categoryId,
-        price,
-        gst,
-        itemType,
-        image,
-        isAvailable,
-      },
+      data: updateData,
     });
 
     res.json({ success: true, data: menuItem });

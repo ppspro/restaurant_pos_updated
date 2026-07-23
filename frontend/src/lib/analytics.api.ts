@@ -24,7 +24,7 @@ export const AnalyticsApi = {
   },
 
   getSalesMetrics: async (filters: AnalyticsFilters) => {
-    const { data } = await api.get('/analytics/sales', { params: filters });
+    const { data } = await api.get('/analytics/sales/metrics', { params: filters });
     return data.data;
   },
 
@@ -34,7 +34,7 @@ export const AnalyticsApi = {
   },
 
   getPeakHours: async (filters: AnalyticsFilters) => {
-    const { data } = await api.get('/analytics/orders/peak-hours', { params: filters });
+    const { data } = await api.get('/analytics/sales/peak-hours', { params: filters });
     return data.data;
   },
 

@@ -18,7 +18,6 @@ export function UserModal({ isOpen, onClose, onSubmit, user }: UserModalProps) {
     password: '',
     role: 'CASHIER',
     status: 'ACTIVE',
-    terminalId: '',
   });
 
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,7 +45,6 @@ export function UserModal({ isOpen, onClose, onSubmit, user }: UserModalProps) {
         password: '',
         role: 'CASHIER',
         status: 'ACTIVE',
-        terminalId: '',
       });
       setConfirmPassword('');
       setErrors({});

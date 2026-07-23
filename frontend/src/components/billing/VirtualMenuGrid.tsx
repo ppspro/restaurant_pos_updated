@@ -41,9 +41,10 @@ export const VirtualMenuGrid = memo(({ containerHeight = 600 }: VirtualMenuGridP
         return false;
       }
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
+        const q = searchQuery.toLowerCase().trim();
         return (
           item.name.toLowerCase().includes(q) ||
+          item.itemNumber?.toLowerCase().includes(q) ||
           item.shortCode.toLowerCase().includes(q) ||
           (item.barcode ?? '').includes(q)
         );

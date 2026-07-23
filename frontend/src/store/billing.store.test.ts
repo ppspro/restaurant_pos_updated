@@ -24,6 +24,8 @@ describe('Billing Store Calculations', () => {
     isSpicy: false,
     isGlutenFree: false,
     gstPercentage: 5,
+    itemNumber: 'M0001',
+    gst: 5,
   };
 
   it('should calculate subtotal, gst, and grand total correctly without discount', () => {

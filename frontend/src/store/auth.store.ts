@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL as string;
 
 export interface User {
   id: string;

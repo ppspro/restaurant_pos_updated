@@ -9,30 +9,15 @@ import { Button } from '../../ui/button';
 import { X, Save } from 'lucide-react';
 
 const printerSchema = z.object({
-  name: z.string().min(1, 'Printer Name is required'),
-  type: z.enum(['Receipt Printer', 'Kitchen KOT Printer', 'Label Printer', 'Barcode Printer']),
-  brand: z.string().optional(),
-  model: z.string().optional(),
-  connectionType: z.enum(['USB', 'Network', 'Bluetooth']),
+  printerName: z.string().min(1, 'Printer Name is required'),
+  printerType: z.enum(['Receipt Printer', 'Kitchen KOT Printer', 'Label Printer', 'Barcode Printer']),
   ipAddress: z.string().optional(),
   port: z.number().min(1).max(65535).optional(),
   paperWidth: z.enum(['58mm', '80mm']),
   location: z.enum(['Front Counter', 'Kitchen', 'Billing Counter', 'Packing Area']),
-  terminalId: z.string().optional(),
-  status: z.enum(['Online', 'Offline']),
-  autoPrint: z.boolean().default(true),
-  printReceipt: z.boolean().default(true),
-  printKOT: z.boolean().default(true),
-  printInvoice: z.boolean().default(false),
-  notes: z.string().optional(),
+  status: z.enum(['ONLINE', 'OFFLINE']),
 }).refine(data => {
-  if (data.connectionType === 'Network' && !data.ipAddress) return false;
-  return true;
-}, {
-  message: 'IP Address is required for Network printers',
-  path: ['ipAddress'],
-}).refine(data => {
-  if (data.connectionType === 'Network' && data.ipAddress) {
+  if (data.ipAddress) {
     const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     return ipv4Regex.test(data.ipAddress);
   }
@@ -54,68 +39,39 @@ export default function PrinterFormModal({ isOpen, onClose, printer }: PrinterFo
   const queryClient = useQueryClient();
   const { notify } = useNotification();
 
-  const { register, handleSubmit, formState: { errors }, watch, reset, setValue } = useForm<PrinterFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<PrinterFormValues>({
     resolver: zodResolver(printerSchema) as any,
     defaultValues: {
-      name: '',
-      type: 'Receipt Printer',
-      brand: '',
-      model: '',
-      connectionType: 'USB',
+      printerName: '',
+      printerType: 'Receipt Printer',
       ipAddress: '',
       port: 9100,
       paperWidth: '80mm',
       location: 'Front Counter',
-      terminalId: '',
-      status: 'Online',
-      autoPrint: true,
-      printReceipt: true,
-      printKOT: true,
-      printInvoice: false,
-      notes: '',
+      status: 'ONLINE',
     }
   });
-
-  const connectionType = watch('connectionType');
 
   useEffect(() => {
     if (printer) {
       reset({
-        name: printer.name,
-        type: printer.type as any,
-        brand: printer.brand || '',
-        model: printer.model || '',
-        connectionType: printer.connectionType as any,
+        printerName: printer.printerName,
+        printerType: printer.printerType as any,
         ipAddress: printer.ipAddress || '',
         port: printer.port || 9100,
         paperWidth: printer.paperWidth as any,
         location: printer.location as any,
-        terminalId: printer.terminalId || '',
         status: printer.status as any,
-        autoPrint: printer.autoPrint,
-        printReceipt: printer.printReceipt,
-        printKOT: printer.printKOT,
-        printInvoice: printer.printInvoice,
-        notes: printer.notes || '',
       });
     } else {
       reset({
-        name: '',
-        type: 'Receipt Printer',
-        brand: '',
-        model: '',
-        connectionType: 'USB',
+        printerName: '',
+        printerType: 'Receipt Printer',
         ipAddress: '',
         port: 9100,
         paperWidth: '80mm',
         location: 'Front Counter',
-        terminalId: '',
-        status: 'Online',
-        autoPrint: true,
-        printReceipt: true,
-        printKOT: true,
-        printInvoice: false,
-        notes: '',
+        status: 'ONLINE',
       });
     }
   }, [printer, reset, isOpen]);
@@ -146,10 +102,6 @@ export default function PrinterFormModal({ isOpen, onClose, printer }: PrinterFo
 
   const onSubmit = (data: PrinterFormValues) => {
     const payload = { ...data };
-    if (payload.connectionType !== 'Network') {
-      payload.ipAddress = undefined;
-      payload.port = undefined;
-    }
     
     if (printer) {
       updateMutation.mutate(payload);
@@ -185,16 +137,16 @@ export default function PrinterFormModal({ isOpen, onClose, printer }: PrinterFo
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Printer Name *</label>
               <input
-                {...register('name')}
+                {...register('printerName')}
                 className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="e.g. Kitchen Main"
               />
-              {errors.name && <span className="text-red-500 text-xs mt-1 block">{errors.name.message}</span>}
+              {errors.printerName && <span className="text-red-500 text-xs mt-1 block">{errors.printerName.message}</span>}
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-              <select {...register('type')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+              <select {...register('printerType')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="Receipt Printer">Receipt Printer</option>
                 <option value="Kitchen KOT Printer">Kitchen KOT Printer</option>
                 <option value="Label Printer">Label Printer</option>
@@ -202,44 +154,22 @@ export default function PrinterFormModal({ isOpen, onClose, printer }: PrinterFo
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Brand</label>
-              <input {...register('brand')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Epson" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Model</label>
-              <input {...register('model')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. TM-T82" />
-            </div>
-
-            {/* Connection Details */}
             <div className="col-span-1 md:col-span-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-4 border-b pb-2">
               Connection Settings
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Connection Type *</label>
-              <select {...register('connectionType')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="USB">USB</option>
-                <option value="Network">Network</option>
-                <option value="Bluetooth">Bluetooth</option>
-              </select>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">IP Address</label>
+              <input {...register('ipAddress')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="192.168.1.100" />
+              {errors.ipAddress && <span className="text-red-500 text-xs mt-1 block">{errors.ipAddress.message}</span>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Port</label>
+              <input type="number" {...register('port', { valueAsNumber: true })} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" />
+              {errors.port && <span className="text-red-500 text-xs mt-1 block">{errors.port.message}</span>}
             </div>
 
-            {connectionType === 'Network' && (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">IP Address *</label>
-                  <input {...register('ipAddress')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="192.168.1.100" />
-                  {errors.ipAddress && <span className="text-red-500 text-xs mt-1 block">{errors.ipAddress.message}</span>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Port</label>
-                  <input type="number" {...register('port', { valueAsNumber: true })} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" />
-                  {errors.port && <span className="text-red-500 text-xs mt-1 block">{errors.port.message}</span>}
-                </div>
-              </>
-            )}
+
 
             {/* Configuration */}
             <div className="col-span-1 md:col-span-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-4 border-b pb-2">
@@ -267,39 +197,12 @@ export default function PrinterFormModal({ isOpen, onClose, printer }: PrinterFo
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Status</label>
               <select {...register('status')} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="Online">Online</option>
-                <option value="Offline">Offline</option>
+                <option value="ONLINE">ONLINE</option>
+                <option value="OFFLINE">OFFLINE</option>
               </select>
             </div>
 
-            {/* Print Options */}
-            <div className="col-span-1 md:col-span-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-4 border-b pb-2">
-              Print Options
-            </div>
-            
-            <div className="col-span-1 md:col-span-2 flex flex-wrap gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" {...register('autoPrint')} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto Print</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" {...register('printReceipt')} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Print Receipt</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" {...register('printKOT')} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Print KOT</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" {...register('printInvoice')} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Print Invoice</span>
-              </label>
-            </div>
 
-            <div className="col-span-1 md:col-span-2 mt-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-              <textarea {...register('notes')} rows={2} className="w-full px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Any additional details..." />
-            </div>
           </div>
 
           <div className="mt-8 flex justify-end gap-3 pt-6 border-t dark:border-gray-800 sticky bottom-0 bg-white dark:bg-slate-900 pb-2">
