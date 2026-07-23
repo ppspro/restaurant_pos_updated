@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_API_URL as string;
+import { api } from '../api/axios';
 
 export interface User {
   id: string;
@@ -36,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials) => {
         set({ loading: true });
         try {
-          const response = await axios.post(`${BASE_URL}/auth/login`, credentials);
+          const response = await api.post('/auth/login', credentials);
           const { accessToken, refreshToken, user } = response.data.data;
           set({
             accessToken,
@@ -57,13 +55,7 @@ export const useAuthStore = create<AuthState>()(
         const { accessToken } = get();
         try {
           if (accessToken) {
-            await axios.post(
-              `${BASE_URL}/auth/logout`,
-              { reason },
-              {
-                headers: { Authorization: `Bearer ${accessToken}` },
-              }
-            );
+            await api.post('/auth/logout', { reason });
           }
         } catch (error) {
           console.error('Logout request failed:', error);
@@ -83,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+          const response = await api.post('/auth/refresh', {
             refreshToken,
           });
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;

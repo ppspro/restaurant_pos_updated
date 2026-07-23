@@ -1,8 +1,23 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth.store';
 
+const baseURL = import.meta.env.VITE_API_URL as string;
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL as string;
+
+if (!baseURL || baseURL.trim() === '' || baseURL === 'undefined') {
+  throw new Error(
+    'Critical Configuration Error: VITE_API_URL is undefined. The frontend application cannot establish connection with the API server.'
+  );
+}
+
+if (!apiBaseURL || apiBaseURL.trim() === '' || apiBaseURL === 'undefined') {
+  throw new Error(
+    'Critical Configuration Error: VITE_API_BASE_URL is undefined. The frontend application cannot resolve assets resources.'
+  );
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL as string,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
