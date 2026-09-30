@@ -7,10 +7,10 @@ import { Landmark, Settings, Currency, Clock, Percent, Globe, Save } from 'lucid
 
 export default function SystemConfig() {
   const [settings, setSettings] = useState({
-    restaurantName: 'Express Diner',
+    restaurantName: 'Shree Krishna',
     address: '123 Main Street, Bangalore, KA, India',
     phone: '+91 98765 43210',
-    email: 'ops@expressdiner.com',
+    email: 'ops@shreekrishna.com',
     gstNumber: '29AAAAA0000A1Z5',
     currency: 'INR (₹)',
     timezone: 'Asia/Kolkata (GMT+05:30)',
@@ -145,7 +145,7 @@ export default function SystemConfig() {
                 <Label className="text-xs font-semibold text-muted-foreground">Tax Type</Label>
                 <Input
                   disabled
-                  value="GST (5.0%)"
+                  value="No Tax (GST Removed)"
                   className="h-10 text-xs border border-border bg-slate-50/50 dark:bg-slate-950/20 text-muted-foreground rounded-xl"
                 />
               </div>

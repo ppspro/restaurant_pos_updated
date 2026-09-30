@@ -30,6 +30,7 @@ import Printers from '../pages/admin/Printers';
 import AuditLogs from '../pages/admin/AuditLogs';
 import SystemConfig from '../pages/admin/SystemConfig';
 import Backup from '../pages/admin/Backup';
+import RecoveryKeys from '../pages/admin/RecoveryKeys';
 import License from '../pages/admin/License';
 import SystemHealth from '../pages/admin/SystemHealth';
 
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
     children: [
       // ── Admin-only: Dashboard with sidebar ──
       {
-        element: <RoleGuard allowedRoles={['SUPER_ADMIN']} />,
+        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'MANAGER']} />,
         children: [
           {
             path: '/dashboard',
@@ -94,15 +95,16 @@ export const router = createBrowserRouter([
               { path: 'settings', element: <SystemConfig /> },
               { path: 'backup', element: <Backup /> },
               { path: 'license', element: <License /> },
+              { path: 'recovery', element: <RecoveryKeys /> },
               { path: 'health', element: <SystemHealth /> },
             ],
           },
         ],
       },
 
-      // ── POS Checkout (Admin + Cashier) ──
+      // ── POS Checkout (Admin + Cashier + Manager) ──
       {
-        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'CASHIER']} />,
+        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'CASHIER', 'MANAGER']} />,
         children: [
           {
             path: '/billing',

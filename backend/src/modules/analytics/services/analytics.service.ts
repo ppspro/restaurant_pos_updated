@@ -13,83 +13,125 @@ export interface AnalyticsQueryDto {
 }
 
 export class AnalyticsService {
-  private static getDateFilter(dto: AnalyticsQueryDto) {
-    const now = new Date();
-    let gte: Date;
-    let lte: Date;
+  // Helper to get a Date object representing the current time in IST but mapped as local time
+  // This allows date-fns startOfDay/endOfDay (which use local time, i.e. UTC on server) to work as if the server was in IST.
+  private static getISTDate(date: Date = new Date()): Date {
+    const istString = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false,
+    }).format(date); // MM/DD/YYYY, HH:mm:ss
+    
+    // Parse it back into a local date
+    const [datePart, timePart] = istString.split(', ');
+    const [month, day, year] = datePart.split('/');
+    const [hour, min, sec] = timePart.split(':');
+    
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min), Number(sec));
+  }
+
+  // Convert a local date (which pretends to be IST) back to a real UTC Date object that represents that exact IST moment
+  private static toRealUTCDate(fakeISTDate: Date): Date {
+    const year = fakeISTDate.getFullYear();
+    const month = fakeISTDate.getMonth();
+    const day = fakeISTDate.getDate();
+    const hour = fakeISTDate.getHours();
+    const min = fakeISTDate.getMinutes();
+    const sec = fakeISTDate.getSeconds();
+    const ms = fakeISTDate.getMilliseconds();
+    
+    // We have the exact year, month, day, hour, min, sec in IST.
+    // IST is UTC+5:30. So we just subtract 5 hours and 30 mins to get the UTC time.
+    return new Date(Date.UTC(year, month, day, hour - 5, min - 30, sec, ms));
+  }
+
+  public static getDateFilter(dto: AnalyticsQueryDto) {
+    const nowIST = this.getISTDate();
+    let gteFake: Date;
+    let lteFake: Date;
 
     switch (dto.dateRange) {
       case 'TODAY':
-        gte = startOfDay(now);
-        lte = endOfDay(now);
+        gteFake = startOfDay(nowIST);
+        lteFake = endOfDay(nowIST);
         break;
       case 'YESTERDAY':
-        const yesterday = subDays(now, 1);
-        gte = startOfDay(yesterday);
-        lte = endOfDay(yesterday);
+        const yesterday = subDays(nowIST, 1);
+        gteFake = startOfDay(yesterday);
+        lteFake = endOfDay(yesterday);
         break;
       case 'THIS_WEEK':
-        gte = startOfWeek(now, { weekStartsOn: 1 });
-        lte = endOfWeek(now, { weekStartsOn: 1 });
+        gteFake = startOfWeek(nowIST, { weekStartsOn: 1 });
+        lteFake = endOfWeek(nowIST, { weekStartsOn: 1 });
         break;
       case 'THIS_MONTH':
-        gte = startOfMonth(now);
-        lte = endOfMonth(now);
+        gteFake = startOfMonth(nowIST);
+        lteFake = endOfMonth(nowIST);
         break;
       case 'THIS_YEAR':
-        gte = startOfYear(now);
-        lte = endOfYear(now);
+        gteFake = startOfYear(nowIST);
+        lteFake = endOfYear(nowIST);
         break;
       case 'CUSTOM':
         if (!dto.startDate || !dto.endDate) throw new Error('CUSTOM date range requires startDate and endDate');
-        gte = startOfDay(parseISO(dto.startDate));
-        lte = endOfDay(parseISO(dto.endDate));
+        // Parse the input YYYY-MM-DD strings directly as local time to mimic IST bounds
+        const [sYear, sMonth, sDay] = dto.startDate.split('-').map(Number);
+        const [eYear, eMonth, eDay] = dto.endDate.split('-').map(Number);
+        gteFake = startOfDay(new Date(sYear, sMonth - 1, sDay));
+        lteFake = endOfDay(new Date(eYear, eMonth - 1, eDay));
         break;
       default:
-        gte = startOfDay(now);
-        lte = endOfDay(now);
+        gteFake = startOfDay(nowIST);
+        lteFake = endOfDay(nowIST);
     }
 
-    return { gte, lte };
+    return { 
+      gte: this.toRealUTCDate(gteFake), 
+      lte: this.toRealUTCDate(lteFake) 
+    };
   }
 
   private static getPreviousDateFilter(dto: AnalyticsQueryDto) {
-    const now = new Date();
-    let gte: Date;
-    let lte: Date;
+    const nowIST = this.getISTDate();
+    let gteFake: Date;
+    let lteFake: Date;
 
     switch (dto.dateRange) {
       case 'TODAY':
-        const yesterday = subDays(now, 1);
-        gte = startOfDay(yesterday);
-        lte = endOfDay(yesterday);
+        const yesterday = subDays(nowIST, 1);
+        gteFake = startOfDay(yesterday);
+        lteFake = endOfDay(yesterday);
         break;
       case 'YESTERDAY':
-        const dayBefore = subDays(now, 2);
-        gte = startOfDay(dayBefore);
-        lte = endOfDay(dayBefore);
+        const dayBefore = subDays(nowIST, 2);
+        gteFake = startOfDay(dayBefore);
+        lteFake = endOfDay(dayBefore);
         break;
       case 'THIS_WEEK':
-        const lastWeek = subDays(now, 7);
-        gte = startOfWeek(lastWeek, { weekStartsOn: 1 });
-        lte = endOfWeek(lastWeek, { weekStartsOn: 1 });
+        const lastWeek = subDays(nowIST, 7);
+        gteFake = startOfWeek(lastWeek, { weekStartsOn: 1 });
+        lteFake = endOfWeek(lastWeek, { weekStartsOn: 1 });
         break;
       case 'THIS_MONTH':
-        const lastMonth = subDays(startOfMonth(now), 1);
-        gte = startOfMonth(lastMonth);
-        lte = endOfMonth(lastMonth);
+        const lastMonth = subDays(startOfMonth(nowIST), 1);
+        gteFake = startOfMonth(lastMonth);
+        lteFake = endOfMonth(lastMonth);
         break;
       case 'THIS_YEAR':
-        const lastYear = subDays(startOfYear(now), 1);
-        gte = startOfYear(lastYear);
-        lte = endOfYear(lastYear);
+        const lastYear = subDays(startOfYear(nowIST), 1);
+        gteFake = startOfYear(lastYear);
+        lteFake = endOfYear(lastYear);
         break;
       default:
-        gte = startOfDay(now);
-        lte = endOfDay(now);
+        gteFake = startOfDay(nowIST);
+        lteFake = endOfDay(nowIST);
     }
 
-    return { gte, lte };
+    return { 
+      gte: this.toRealUTCDate(gteFake), 
+      lte: this.toRealUTCDate(lteFake) 
+    };
   }
 
   static async getSummary(dto: AnalyticsQueryDto) {
@@ -177,7 +219,8 @@ export class AnalyticsService {
     }
 
     orders.forEach((o: any) => {
-      const h = o.createdAt.getHours().toString().padStart(2, '0') + ':00';
+      const istDate = this.getISTDate(o.createdAt);
+      const h = istDate.getHours().toString().padStart(2, '0') + ':00';
       hourlyData[h].sales += Number(o.grandTotal);
       hourlyData[h].orders += 1;
     });
@@ -345,7 +388,8 @@ export class AnalyticsService {
     }
 
     orders.forEach((o: any) => {
-      const h = o.createdAt.getHours().toString().padStart(2, '0') + ':00';
+      const istDate = this.getISTDate(o.createdAt);
+      const h = istDate.getHours().toString().padStart(2, '0') + ':00';
       hourlyCounts[h]++;
     });
 
@@ -495,10 +539,15 @@ export class AnalyticsService {
       // Update trend based on date (format YYYY-MM-DD or simple Date string)
       // For a single day view (TODAY), grouping by Hour is better. For Week/Month, group by Day.
       let trendKey = '';
+      const istDate = this.getISTDate(p.createdAt);
       if (dto.dateRange === 'TODAY' || dto.dateRange === 'YESTERDAY') {
-        trendKey = p.createdAt.getHours().toString().padStart(2, '0') + ':00';
+        trendKey = istDate.getHours().toString().padStart(2, '0') + ':00';
       } else {
-        trendKey = p.createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+        // Build YYYY-MM-DD from istDate
+        const y = istDate.getFullYear();
+        const m = (istDate.getMonth() + 1).toString().padStart(2, '0');
+        const d = istDate.getDate().toString().padStart(2, '0');
+        trendKey = `${y}-${m}-${d}`;
       }
 
       if (!trendMap[trendKey]) {
@@ -548,7 +597,7 @@ export class AnalyticsService {
       });
       
       // Get today's token info
-      const today = startOfDay(new Date());
+      const today = this.toRealUTCDate(startOfDay(this.getISTDate()));
       const tokenCounter = await prisma.tokenCounter.findFirst({ where: { businessDate: today } });
       const businessDay = await prisma.businessDay.findFirst({ orderBy: { businessDate: 'desc' } });
 

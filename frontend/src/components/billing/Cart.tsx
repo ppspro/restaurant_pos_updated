@@ -11,7 +11,9 @@ import {
 import { DiscountDialog } from './DiscountDialog';
 import { PaymentDialog } from './PaymentDialog';
 import { ReceiptPreview } from './ReceiptPreview';
+import { offlineQueue } from '../../services/offlineQueue.service';
 import type { ReceiptBundle, ReceiptItem } from '../../types/receipt.types';
+import { queryClient } from '../../lib/queryClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -49,11 +51,11 @@ export const Cart = () => {
   const [apiError, setApiError] = useState<string>('');
   const [creatingOrder, setCreatingOrder] = useState(false);
 
-  // Math totals
+  // Math totals — GST removed per client request
   const subtotal = cart.reduce((acc, c) => acc + c.price * c.quantity, 0);
   const discountAmount = discountType === 'PERCENTAGE' ? (subtotal * discountValue) / 100 : discountValue;
-  const gstAmount = ((subtotal - discountAmount) * 5) / 100;
-  const total = subtotal - discountAmount + gstAmount;
+  const gstAmount = 0; // GST disabled
+  const total = subtotal - discountAmount; // No GST applied
 
   const kitchenItemsCount = cart.filter(c => c.itemType === 'KITCHEN').reduce((acc, c) => acc + c.quantity, 0);
   const packedItemsCount = cart.filter(c => c.itemType === 'PACKED').reduce((acc, c) => acc + c.quantity, 0);
@@ -118,8 +120,7 @@ export const Cart = () => {
     setApiError('');
 
     try {
-      // Call the real Order Creation API via interceptored axios client
-      const response = await api.post('/billing/orders', {
+      const payload = {
         cashierId,
         items: cart.map(c => ({
           menuItemId: c.id,
@@ -137,38 +138,63 @@ export const Cart = () => {
         paymentMethod: paymentMethod ?? 'CASH',
         receivedCash: receivedCashAmount || undefined,
         transactionReference: transactionReference || undefined,
-      });
+        idempotencyKey: crypto.randomUUID(),
+      };
 
-      const result = response.data;
+      let apiToken: number;
+      let apiOrderNumber: string;
+      let businessDate: string | undefined;
+      let apiOrderTime: string | undefined;
+      let orderId: string;
 
-      if (!result.success) {
-        throw new Error(result.message || 'Order creation failed');
+      if (!navigator.onLine) {
+        // Enqueue for offline sync
+        const offlineId = await offlineQueue.enqueueOrder(payload);
+        
+        // Generate mock data for local print
+        apiToken = Math.floor(Math.random() * 900) + 100;
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        apiOrderNumber = `OFF-${dateStr}-${apiToken}`;
+        orderId = offlineId;
+      } else {
+        // Call the real Order Creation API via interceptored axios client
+        const response = await api.post('/billing/orders', payload);
+        const result = response.data;
+        if (!result.success) {
+          throw new Error(result.message || 'Order creation failed');
+        }
+        apiToken = result.data.tokenNumber;
+        apiOrderNumber = result.data.orderNumber;
+        businessDate = result.data.businessDate;
+        apiOrderTime = result.data.orderTime;
+        orderId = result.data.orderId;
       }
-
-      const { tokenNumber: apiToken, orderNumber: apiOrderNumber, businessDate } = result.data;
 
       setTokenNumber(apiToken);
       setOrderNumber(apiOrderNumber);
 
       // Build receipt bundle from current cart state
+      // lineTotal = price * quantity (no GST per client request)
       const receiptItems: ReceiptItem[] = cart.map(c => ({
         itemNumber: c.itemNumber,
         name: c.name,
         quantity: c.quantity,
         unitPrice: c.price,
-        lineTotal: (c.price + c.price * (c.gstPercentage / 100)) * c.quantity,
+        lineTotal: c.price * c.quantity,
         itemType: c.itemType,
         instructions: c.instructions
       }));
 
-      const today = new Date().toLocaleDateString('en-IN');
-      const orderTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      // Use Intl.DateTimeFormat for Asia/Kolkata timezone
+      const orderDateObj = apiOrderTime ? new Date(apiOrderTime) : new Date();
+      const today = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }).format(orderDateObj);
+      const orderTime = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(orderDateObj).toUpperCase();
       const kitchenItems = receiptItems.filter(i => i.itemType === 'KITCHEN');
       const hasKOT = kitchenItems.length > 0;
 
       const baseData = {
-        restaurantName: 'Express Diner',
-        businessDate: businessDate ?? today,
+        restaurantName: 'Shree Krishna',
+        transactionDate: today,
         tokenNumber: apiToken,
         orderTime,
         cashierName: 'Cashier User',
@@ -180,14 +206,14 @@ export const Cart = () => {
         customerReceipt: {
           ...baseData, receiptType: 'CUSTOMER', items: receiptItems,
           subtotal, discountLabel: discountReason || undefined, discountAmount,
-          gstAmount, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
+          gstAmount: 0, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
           receivedCash: receivedCashAmount, changeDue: changeReturnAmount,
           transactionRef: transactionReference || undefined,
         },
         restaurantCopy: {
           ...baseData, receiptType: 'RESTAURANT', items: receiptItems,
           subtotal, discountLabel: discountReason || undefined, discountAmount,
-          gstAmount, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
+          gstAmount: 0, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
           receivedCash: receivedCashAmount, changeDue: changeReturnAmount,
           transactionRef: transactionReference || undefined,
         },
@@ -198,21 +224,29 @@ export const Cart = () => {
 
       // Save to order history
       addCompletedOrder({
-        orderId: result.data.orderId,
+        orderId,
         orderNumber: apiOrderNumber,
         tokenNumber: apiToken,
         grandTotal: total,
         paymentMethod: paymentMethod ?? 'CASH',
         businessDate: businessDate ?? today,
-        completedAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        completedAt: new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }).format(orderDateObj).toUpperCase(),
         receiptBundle: bundle,
       });
+
+      // Invalidate analytics queries to update Daily Sales report
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
 
       setReceiptOpen(true);
       setCheckoutComplete(true);
 
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Order creation failed';
+    } catch (err: any) {
+      let msg = 'Order creation failed';
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
       setApiError(msg);
       // Reset payment state so cashier can retry
       setPaymentState({ paymentStatus: 'FAILED' });
@@ -450,10 +484,7 @@ export const Cart = () => {
               <span>- ₹{discountAmount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between text-gray-500">
-            <span>GST Taxes (5%):</span>
-            <span className="text-gray-900 dark:text-white">₹{gstAmount.toFixed(2)}</span>
-          </div>
+          {/* GST row removed per client request */}
           
           <div className="flex justify-between font-black text-base pt-2.5 border-t border-dashed border-gray-200 dark:border-gray-800">
             <span className="text-gray-900 dark:text-white">Grand Total:</span>

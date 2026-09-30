@@ -50,7 +50,7 @@ class OfflineQueueService {
     });
   }
 
-  async enqueueOrder(payload: any): Promise<void> {
+  async enqueueOrder(payload: any): Promise<string> {
     if (!this.db) await this.initDB();
 
     const queuedOrder: QueuedOrder = {
@@ -64,7 +64,7 @@ class OfflineQueueService {
       const store = tx.objectStore(STORE_NAME);
       const request = store.add(queuedOrder);
 
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => resolve(queuedOrder.id);
       request.onerror = () => reject(request.error);
     });
   }

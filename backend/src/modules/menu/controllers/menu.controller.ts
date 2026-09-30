@@ -46,17 +46,27 @@ export const createMenuItem = async (req: Request, res: Response, next: NextFunc
     let finalItemNumber = req.body.itemNumber;
 
     if (!finalItemNumber) {
-      const lastItem = await prisma.menuItem.findFirst({
+      // Fetch all auto-generated item numbers and find the true numerical max
+      // This prevents collisions when items are created manually or out-of-order
+      const allItems = await prisma.menuItem.findMany({
         where: { itemNumber: { startsWith: 'M' } },
-        orderBy: { itemNumber: 'desc' }
+        select: { itemNumber: true },
       });
-      if (lastItem && lastItem.itemNumber) {
-        const lastNum = parseInt(lastItem.itemNumber.substring(1), 10);
-        finalItemNumber = `M${String(lastNum + 1).padStart(4, '0')}`;
-      } else {
-        finalItemNumber = 'M0001';
+      
+      let maxNum = 0;
+      for (const item of allItems) {
+        if (item.itemNumber) {
+          const num = parseInt(item.itemNumber.substring(1), 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
       }
+      
+      const nextNum = maxNum + 1;
+      finalItemNumber = `M${String(nextNum).padStart(4, '0')}`;
     }
+
 
     const menuItem = await prisma.menuItem.create({
       data: {

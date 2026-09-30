@@ -20,12 +20,14 @@ export interface CalculationResult {
 
 export class CalculationService {
   /**
-   * Calculates order totals considering tax inclusive/exclusive configurations
+   * Calculates order totals. GST is no longer applied per client request.
+   * gstAmount is always 0. Total = subtotal - discount (rounded).
+   * DB column gstAmount is preserved but always stored as 0.
    */
   static calculateBill(
     items: InputCartItem[],
     discountPercentage: number = 0,
-    taxInclusive: boolean = true
+    _taxInclusive: boolean = true  // retained for API compatibility, not used
   ): CalculationResult {
     // Assert validations
     if (discountPercentage < 0 || discountPercentage > 100) {
@@ -51,47 +53,11 @@ export class CalculationService {
     const discountAmount = Number(((subtotal * discountPercentage) / 100).toFixed(2));
     const netAmount = subtotal - discountAmount;
 
-    let taxableAmount = 0;
-    let gstAmount = 0;
+    // GST removed per client request — always 0
+    const gstAmount = 0;
+    const taxableAmount = Number(netAmount.toFixed(2));
 
-    if (taxInclusive) {
-      // For inclusive, the price already contains the tax
-      // taxableAmount = netAmount / (1 + gstRate)
-      // gstAmount = netAmount - taxableAmount
-      // We assume a uniform tax rate on the net amount based on average tax or item-level math.
-      // To keep it robust, let's aggregate item-level tax math.
-      let totalTax = 0;
-      items.forEach((item) => {
-        const itemSubtotal = item.price * item.quantity;
-        const itemDiscount = (itemSubtotal * discountPercentage) / 100;
-        const itemNet = itemSubtotal - itemDiscount;
-
-        const taxRate = item.gstPercentage / 100;
-        const itemTaxable = itemNet / (1 + taxRate);
-        const itemTax = itemNet - itemTaxable;
-
-        totalTax += itemTax;
-      });
-      gstAmount = Number(totalTax.toFixed(2));
-      taxableAmount = Number((netAmount - gstAmount).toFixed(2));
-    } else {
-      // For exclusive, we add tax on top of netAmount
-      let totalTax = 0;
-      items.forEach((item) => {
-        const itemSubtotal = item.price * item.quantity;
-        const itemDiscount = (itemSubtotal * discountPercentage) / 100;
-        const itemNet = itemSubtotal - itemDiscount;
-
-        const taxRate = item.gstPercentage / 100;
-        const itemTax = itemNet * taxRate;
-
-        totalTax += itemTax;
-      });
-      gstAmount = Number(totalTax.toFixed(2));
-      taxableAmount = Number(netAmount.toFixed(2));
-    }
-
-    const calculatedGrandTotal = taxableAmount + gstAmount;
+    const calculatedGrandTotal = taxableAmount; // no GST added
     const roundedGrandTotal = Math.round(calculatedGrandTotal);
     const roundOff = Number((roundedGrandTotal - calculatedGrandTotal).toFixed(2));
 
@@ -107,3 +73,4 @@ export class CalculationService {
     };
   }
 }
+

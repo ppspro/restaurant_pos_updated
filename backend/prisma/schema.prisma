@@ -92,6 +92,7 @@ model Order {
   completedAt    DateTime?
   cancelledAt    DateTime?
   customerId     String?       @db.Uuid
+  idempotencyKey String?       @unique @db.VarChar(100)
   orderItems     OrderItem[]
   businessDay    BusinessDay?  @relation(fields: [businessDayId], references: [id], onDelete: Restrict)
   cashier        User          @relation(fields: [cashierId], references: [id])
@@ -168,6 +169,8 @@ model RestaurantSettings {
   temperatureUnit String   @default("C") @db.VarChar(1)
   weatherEnabled  Boolean  @default(true)
   state           String?  @db.VarChar(100)
+  upiId           String?  @db.VarChar(50)
+  upiName         String?  @db.VarChar(100)
 
   @@map("restaurant_settings")
 }
@@ -600,9 +603,23 @@ model LicenseKey {
   @@map("license_keys")
 }
 
+model RecoveryKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  keyHash     String    @db.VarChar(255)
+  label       String    @db.VarChar(50)
+  createdBy   String    @db.Uuid
+  usedAt      DateTime?
+  isRevoked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([keyHash])
+  @@map("recovery_keys")
+}
+
 enum UserRole {
   SUPER_ADMIN
   CASHIER
+  MANAGER
 }
 
 enum ItemType {

@@ -14,21 +14,7 @@ export class ReportService {
   // Since it's private in AnalyticsService, we'll recreate a simple version or make it public.
   // For now, we'll recreate a simple DateFilter
   private static getDateFilter(dto: AnalyticsQueryDto) {
-    const now = new Date();
-    let gte: Date;
-    let lte: Date;
-
-    if (dto.dateRange === 'CUSTOM' && dto.startDate && dto.endDate) {
-       gte = startOfDay(parseISO(dto.startDate));
-       lte = endOfDay(parseISO(dto.endDate));
-    } else {
-       // fallback to today for simplicity if not custom, or we can use startOfDay/endOfDay
-       gte = startOfDay(now);
-       lte = endOfDay(now);
-    }
-    // Note: To perfectly match AnalyticsService, you could make getDateFilter public in AnalyticsService.
-    // For brevity in this implementation, we use this basic filter.
-    return { gte, lte };
+    return AnalyticsService.getDateFilter(dto);
   }
 
   static async getOrdersList(dto: PaginatedQueryDto) {

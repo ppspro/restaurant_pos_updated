@@ -21,12 +21,14 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   return (
     <aside className="hidden w-64 flex-col border-r border-gray-150 dark:border-gray-800 bg-white dark:bg-slate-900 md:flex shrink-0 select-none">
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-150 dark:border-gray-800 px-6 bg-slate-50/50 dark:bg-slate-950/20">
-        <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-sm">
-          ED
-        </div>
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-150 dark:border-gray-800 px-4 bg-slate-50/50 dark:bg-slate-950/20">
+        <img
+          src="/images/Shree Krishna banner.png"
+          alt="Shree Krishna"
+          className="h-9 w-9 object-cover rounded-lg shrink-0 shadow-sm"
+        />
         <span className="text-base font-extrabold tracking-tight text-gray-950 dark:text-white">
-          Express Diner <span className="text-[10px] text-blue-500 font-bold tracking-normal">POS</span>
+          Vnvision <span className="text-[10px] text-blue-500 font-bold tracking-normal">POS</span>
         </span>
       </div>
       

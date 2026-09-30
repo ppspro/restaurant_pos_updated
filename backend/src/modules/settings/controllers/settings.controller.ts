@@ -8,16 +8,17 @@ export const getSettings = async (req: Request, res: Response) => {
     if (!settings) {
       settings = await prisma.restaurantSettings.create({
         data: {
-          restaurantName: "Express Diner",
+          restaurantName: "Shree Krishna",
           address: "123 Main St",
           phone: "123-456-7890",
-          email: "info@expressdiner.com",
+          email: "info@shreekrishna.com",
           gstNumber: "GST123456",
           city: "Bhubaneswar",
           country: "India",
         }
       });
     }
+
     res.json(settings);
   } catch (error: any) {
     logger.error(`Get Settings Error: ${error.message}`);

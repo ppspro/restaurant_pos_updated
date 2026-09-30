@@ -32,6 +32,7 @@ export class ShiftService {
       data: {
         userId,
         terminalId,
+        businessDayId: activeDay.id,
         openingCash: new Prisma.Decimal(openingCash),
         status: 'OPEN',
       },

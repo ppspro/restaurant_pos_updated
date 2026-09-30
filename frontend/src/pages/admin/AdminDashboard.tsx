@@ -78,7 +78,7 @@ export default function AdminDashboard() {
   }, []);
 
   const businessInfo = {
-    restaurantName: "Express Diner",
+    restaurantName: "Shree Krishna",
     currentShift: "Morning Shift (08:00 AM - 04:00 PM)",
     cashierName: "Admin User",
   };

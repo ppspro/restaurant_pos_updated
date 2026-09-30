@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../store/auth.store';
 import {
   LayoutDashboard, Users, ShieldCheck, Monitor,
   Printer, Settings, ScrollText, Database, Key, Activity, ChevronLeft, ChevronRight, Sliders
@@ -23,6 +24,14 @@ const navItems = [
 export default function AdminLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAuthStore();
+  
+  const filteredNavItems = navItems.filter(item => {
+    if (user?.role === 'SUPER_ADMIN') return true;
+    // MANAGER has limited access, block strict admin routes
+    const restricted = ['/admin/roles', '/admin/printers', '/admin/settings', '/admin/backup', '/admin/license', '/admin/health', '/admin/audit'];
+    return !restricted.includes(item.path);
+  });
 
   return (
     <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300">
@@ -55,7 +64,7 @@ export default function AdminLayout() {
 
         {/* Nav list */}
         <nav className="flex-1 overflow-y-auto py-4 space-y-1.5 px-3">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
               location.pathname === item.path ||
@@ -81,7 +90,7 @@ export default function AdminLayout() {
 
         {!collapsed && (
           <div className="px-6 py-4 border-t border-border bg-slate-50/50 dark:bg-slate-950/10">
-            <p className="text-[9px] text-muted-foreground font-extrabold uppercase tracking-wider">SUPER_ADMIN ACCESS</p>
+            <p className="text-[9px] text-muted-foreground font-extrabold uppercase tracking-wider">{user?.role} ACCESS</p>
           </div>
         )}
       </aside>

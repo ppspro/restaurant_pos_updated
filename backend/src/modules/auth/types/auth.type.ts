@@ -1,4 +1,4 @@
 export type UserSessionPayload = {
   userId: string;
-  role: 'SUPER_ADMIN' | 'CASHIER';
+  role: 'SUPER_ADMIN' | 'CASHIER' | 'MANAGER';
 };

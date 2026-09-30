@@ -15,7 +15,7 @@ export interface ReceiptData {
   receiptType: 'CUSTOMER' | 'RESTAURANT' | 'KOT';
   paperSize: PaperSize;
   restaurantName: string;
-  businessDate: string;
+  transactionDate: string;
   tokenNumber: number;
   orderTime: string;
   cashierName: string;

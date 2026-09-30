@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15
-    container_name: pos_db
+    container_name: local_pos_db
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -20,12 +20,12 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pos_pgadmin
+    container_name: local_pos_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - '5050:80'
+      - '5051:80'
     depends_on:
       - db
 
@@ -33,14 +33,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: pos_backend
+    container_name: local_pos_backend
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/pos_db?schema=public
       - JWT_SECRET=super_secret_jwt_key_here
       - PORT=3000
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=http://localhost:5174
     ports:
-      - '3000:3000'
+      - '5000:3000'
     depends_on:
       db:
         condition: service_healthy
@@ -50,11 +50,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pos_frontend
+    container_name: local_pos_frontend
     environment:
-      - VITE_API_URL=http://localhost:3000/api
+      - VITE_API_URL=http://localhost:5000/api/v1
     ports:
-      - '5173:80'
+      - '5174:80'
     depends_on:
       - backend
 

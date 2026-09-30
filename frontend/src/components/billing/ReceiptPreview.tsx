@@ -23,20 +23,22 @@ const ReceiptSheet = ({ data }: { data: ReceiptData }) => {
       style={{ width: '80mm', minHeight: '120px', padding: '8px', fontSize: '11px', lineHeight: '1.5' }}
     >
       {/* Header */}
-      <div className="text-center border-b border-dashed border-gray-400 pb-2 mb-2">
+      <div className="text-center pb-2 mb-2">
         <div className="text-base font-extrabold">{data.restaurantName}</div>
         {isKOT ? (
           <div className="text-sm font-bold mt-0.5">*** KITCHEN ORDER TICKET ***</div>
         ) : (
-          <div className="text-xs text-gray-600 mt-0.5">
-            {data.receiptType === 'RESTAURANT' ? '--- Restaurant Copy ---' : '--- Customer Copy ---'}
+          <div className="text-xs text-gray-800 mt-0.5">
+            {data.receiptType === 'RESTAURANT' ? 'Restaurant Copy' : 'Customer Copy'}
           </div>
         )}
-        <div className="text-xs mt-1">
-          Date: {data.businessDate} &nbsp;|&nbsp; Time: {data.orderTime}
-        </div>
-        <div className="text-xs">Cashier: {data.cashierName}</div>
-        <div className="text-lg font-black mt-1">Token #{String(data.tokenNumber).padStart(3, '0')}</div>
+      </div>
+
+      <div className="border-t border-b border-dashed border-gray-400 py-1.5 mb-2 text-xs text-left space-y-0.5">
+        <div>Date: {data.transactionDate}</div>
+        <div>Time: {data.orderTime}</div>
+        <div>Cashier: {data.cashierName}</div>
+        <div className="font-bold">Token: #{String(data.tokenNumber).padStart(3, '0')}</div>
       </div>
 
       {/* Items */}
@@ -83,16 +85,14 @@ const ReceiptSheet = ({ data }: { data: ReceiptData }) => {
               <span>- INR {(data.discountAmount ?? 0).toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span>GST (5%)</span>
-            <span>INR {(data.gstAmount ?? 0).toFixed(2)}</span>
-          </div>
+          {/* GST row removed per client request */}
           <div className="flex justify-between font-bold text-sm border-t border-dashed border-gray-400 pt-1 mt-1">
             <span>GRAND TOTAL</span>
             <span>INR {(data.grandTotal ?? 0).toFixed(2)}</span>
           </div>
         </div>
       )}
+
 
       {/* Payment – non-KOT only */}
       {!isKOT && (
