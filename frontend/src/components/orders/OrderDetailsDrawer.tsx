@@ -107,10 +107,7 @@ export function OrderDetailsDrawer({ orderId, isOpen, onClose }: OrderDetailsDra
                       <span>Subtotal</span>
                       <span>₹{Number(order.subtotal).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>GST Amount</span>
-                      <span>₹{Number(order.gstAmount).toFixed(2)}</span>
-                    </div>
+                    {/* GST Amount row removed per client request */}
                     {Number(order.discount) > 0 && (
                       <div className="flex justify-between text-destructive">
                         <span>Discount</span>

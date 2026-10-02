@@ -49,11 +49,11 @@ export const Cart = () => {
   const [apiError, setApiError] = useState<string>('');
   const [creatingOrder, setCreatingOrder] = useState(false);
 
-  // Math totals
+  // Math totals — GST removed per client request
   const subtotal = cart.reduce((acc, c) => acc + c.price * c.quantity, 0);
   const discountAmount = discountType === 'PERCENTAGE' ? (subtotal * discountValue) / 100 : discountValue;
-  const gstAmount = ((subtotal - discountAmount) * 5) / 100;
-  const total = subtotal - discountAmount + gstAmount;
+  const gstAmount = 0; // GST disabled
+  const total = subtotal - discountAmount; // No GST applied
 
   const kitchenItemsCount = cart.filter(c => c.itemType === 'KITCHEN').reduce((acc, c) => acc + c.quantity, 0);
   const packedItemsCount = cart.filter(c => c.itemType === 'PACKED').reduce((acc, c) => acc + c.quantity, 0);
@@ -151,12 +151,13 @@ export const Cart = () => {
       setOrderNumber(apiOrderNumber);
 
       // Build receipt bundle from current cart state
+      // lineTotal = price * quantity (no GST per client request)
       const receiptItems: ReceiptItem[] = cart.map(c => ({
         itemNumber: c.itemNumber,
         name: c.name,
         quantity: c.quantity,
         unitPrice: c.price,
-        lineTotal: (c.price + c.price * (c.gstPercentage / 100)) * c.quantity,
+        lineTotal: c.price * c.quantity,
         itemType: c.itemType,
         instructions: c.instructions
       }));
@@ -167,7 +168,7 @@ export const Cart = () => {
       const hasKOT = kitchenItems.length > 0;
 
       const baseData = {
-        restaurantName: 'Express Diner',
+        restaurantName: 'Shree Krishna',
         businessDate: businessDate ?? today,
         tokenNumber: apiToken,
         orderTime,
@@ -180,14 +181,14 @@ export const Cart = () => {
         customerReceipt: {
           ...baseData, receiptType: 'CUSTOMER', items: receiptItems,
           subtotal, discountLabel: discountReason || undefined, discountAmount,
-          gstAmount, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
+          gstAmount: 0, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
           receivedCash: receivedCashAmount, changeDue: changeReturnAmount,
           transactionRef: transactionReference || undefined,
         },
         restaurantCopy: {
           ...baseData, receiptType: 'RESTAURANT', items: receiptItems,
           subtotal, discountLabel: discountReason || undefined, discountAmount,
-          gstAmount, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
+          gstAmount: 0, grandTotal: total, paymentMethod: paymentMethod ?? 'CASH',
           receivedCash: receivedCashAmount, changeDue: changeReturnAmount,
           transactionRef: transactionReference || undefined,
         },
@@ -450,10 +451,7 @@ export const Cart = () => {
               <span>- ₹{discountAmount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between text-gray-500">
-            <span>GST Taxes (5%):</span>
-            <span className="text-gray-900 dark:text-white">₹{gstAmount.toFixed(2)}</span>
-          </div>
+          {/* GST row removed per client request */}
           
           <div className="flex justify-between font-black text-base pt-2.5 border-t border-dashed border-gray-200 dark:border-gray-800">
             <span className="text-gray-900 dark:text-white">Grand Total:</span>

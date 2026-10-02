@@ -43,30 +43,54 @@ export class OrderService {
    * 4. Audit log
    */
   static async createOrder(input: CreateOrderInput): Promise<CreatedOrderResult> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     return await prisma.$transaction(async (tx) => {
       // 1. Find active BusinessDay
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
       const businessDay = input.businessDayId
         ? await tx.businessDay.findUnique({ where: { id: input.businessDayId } })
         : await tx.businessDay.findFirst({
-            where: { businessDate: today, status: 'OPEN' },
+            where: { businessDate: todayUTC, status: 'OPEN' },
           });
 
       if (!businessDay || businessDay.status !== 'OPEN') {
         throw new Error('No active Business Day found. Please open a business day before creating orders.');
       }
 
-      // 2. Increment TokenCounter atomically
-      let counter = await tx.tokenCounter.findUnique({
-        where: { businessDate: businessDay.businessDate },
-      });
+      // 2. Increment TokenCounter atomically with row-level lock (FOR UPDATE)
+      let counter: { id: string; businessDate: Date; currentToken: number } | null = null;
+      
+      const rawCounters = await tx.$queryRaw<Array<{ id: string; businessDate: Date; currentToken: number }>>`
+        SELECT "id", "businessDate", "currentToken" 
+        FROM "token_counters" 
+        WHERE "businessDate" = ${businessDay.businessDate} 
+        LIMIT 1 
+        FOR UPDATE
+      `;
+      counter = rawCounters[0] || null;
 
       if (!counter) {
-        counter = await tx.tokenCounter.create({
-          data: { businessDate: businessDay.businessDate, currentToken: 0 },
-        });
+        // Attempt to create. Since table has @@unique([businessDate]), concurrent inserts will serialize or fail gracefully.
+        try {
+          counter = await tx.tokenCounter.create({
+            data: { businessDate: businessDay.businessDate, currentToken: 0 },
+          });
+          // Re-lock the newly created row
+          await tx.$executeRaw`
+            SELECT "id" FROM "token_counters" WHERE "id" = ${counter.id}::uuid FOR UPDATE
+          `;
+        } catch (e) {
+          // If a race occurred and row was inserted, fetch and lock it
+          const rawReload = await tx.$queryRaw<Array<{ id: string; businessDate: Date; currentToken: number }>>`
+            SELECT "id", "businessDate", "currentToken" 
+            FROM "token_counters" 
+            WHERE "businessDate" = ${businessDay.businessDate} 
+            LIMIT 1 
+            FOR UPDATE
+          `;
+          counter = rawReload[0];
+        }
       }
 
       const tokenNumber = counter.currentToken + 1;
@@ -75,9 +99,10 @@ export class OrderService {
         data: { currentToken: tokenNumber },
       });
 
+
       // 3. Build order identifiers
       const paddedToken = String(tokenNumber).padStart(3, '0');
-      const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const dateStr = todayUTC.toISOString().slice(0, 10).replace(/-/g, '');
       const orderNumber = `ORD-${dateStr}-${paddedToken}`;
 
       // 4. Create Order

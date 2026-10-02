@@ -83,16 +83,14 @@ const ReceiptSheet = ({ data }: { data: ReceiptData }) => {
               <span>- INR {(data.discountAmount ?? 0).toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span>GST (5%)</span>
-            <span>INR {(data.gstAmount ?? 0).toFixed(2)}</span>
-          </div>
+          {/* GST row removed per client request */}
           <div className="flex justify-between font-bold text-sm border-t border-dashed border-gray-400 pt-1 mt-1">
             <span>GRAND TOTAL</span>
             <span>INR {(data.grandTotal ?? 0).toFixed(2)}</span>
           </div>
         </div>
       )}
+
 
       {/* Payment – non-KOT only */}
       {!isKOT && (

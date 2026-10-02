@@ -16,11 +16,18 @@ export const Login = () => {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-white shadow-xl border border-white/20">
-            <UtensilsCrossed className="h-8 w-8" strokeWidth={2} />
+        <div className="relative z-10 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-white shadow-xl border border-white/20">
+              <UtensilsCrossed className="h-8 w-8" strokeWidth={2} />
+            </div>
+            <span className="text-2xl font-bold text-white tracking-tight">Vnvision POS</span>
           </div>
-          <span className="text-2xl font-bold text-white tracking-tight">Express Diner POS</span>
+          <img
+            src="/images/Shree Krishna banner.png"
+            alt="Shree Krishna"
+            className="h-20 object-contain rounded-xl opacity-90 shadow-lg"
+          />
         </div>
 
         <div className="relative z-10 max-w-xl">
@@ -44,7 +51,7 @@ export const Login = () => {
         </div>
 
         <div className="relative z-10 text-white/40 text-sm font-medium">
-          © 2026 Express Diner Inc. All rights reserved.
+          © 2026 Vnvision POS. All rights reserved.
         </div>
       </div>
 
@@ -63,10 +70,12 @@ export const Login = () => {
           <div className="w-full max-w-[460px]">
             {/* Mobile Branding (Only shows when left panel is hidden) */}
             <div className="lg:hidden flex flex-col items-center mb-10 text-center">
-              <div className="p-3 bg-blue-600 rounded-xl text-white shadow-lg mb-4">
-                <UtensilsCrossed className="h-8 w-8" strokeWidth={2} />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Express Diner POS</h2>
+              <img
+                src="/images/Shree Krishna banner.png"
+                alt="Shree Krishna"
+                className="h-16 object-contain mb-3"
+              />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Vnvision POS</h2>
             </div>
 
             {/* Auth Card Header */}

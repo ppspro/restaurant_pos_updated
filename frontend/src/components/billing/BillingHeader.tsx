@@ -171,11 +171,13 @@ export const BillingHeader = () => {
   return (
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 border-b bg-white dark:bg-gray-900 border-gray-150 dark:border-gray-800">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-blue-500 text-white rounded-lg font-bold text-lg tracking-wider">
-          POS
-        </div>
+        <img
+          src="/images/Shree Krishna banner.png"
+          alt="Shree Krishna"
+          className="h-10 object-contain rounded-lg shadow-sm"
+        />
         <div>
-          <h1 className="text-md font-bold text-gray-900 dark:text-white">Spice Garden Restaurant</h1>
+          <h1 className="text-md font-bold text-gray-900 dark:text-white">Shree Krishna</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">Terminal: <span className="font-semibold text-gray-700 dark:text-gray-200">T-01</span></p>
         </div>
       </div>

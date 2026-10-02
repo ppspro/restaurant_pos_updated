@@ -46,17 +46,24 @@ export const createMenuItem = async (req: Request, res: Response, next: NextFunc
     let finalItemNumber = req.body.itemNumber;
 
     if (!finalItemNumber) {
+      // Fix: use createdAt desc instead of itemNumber desc.
+      // Lexicographic sort on 'M0009' vs 'M0010' would incorrectly rank M0009 higher,
+      // causing wrong sequence generation. createdAt desc gives us the true last item.
       const lastItem = await prisma.menuItem.findFirst({
         where: { itemNumber: { startsWith: 'M' } },
-        orderBy: { itemNumber: 'desc' }
+        orderBy: [{ createdAt: 'desc' }],
+        select: { itemNumber: true },
       });
       if (lastItem && lastItem.itemNumber) {
         const lastNum = parseInt(lastItem.itemNumber.substring(1), 10);
-        finalItemNumber = `M${String(lastNum + 1).padStart(4, '0')}`;
+        // If parse fails (NaN), default to 0 so we start from M0001
+        const nextNum = isNaN(lastNum) ? 1 : lastNum + 1;
+        finalItemNumber = `M${String(nextNum).padStart(4, '0')}`;
       } else {
         finalItemNumber = 'M0001';
       }
     }
+
 
     const menuItem = await prisma.menuItem.create({
       data: {

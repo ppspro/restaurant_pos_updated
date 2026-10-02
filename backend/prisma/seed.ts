@@ -442,10 +442,10 @@ async function main() {
   if (settingsCount === 0) {
     await prisma.restaurantSettings.create({
       data: {
-        restaurantName: 'Express Diner',
+        restaurantName: 'Shree Krishna',
         address: '123 Main Street, Bangalore',
         phone: '080-12345678',
-        email: 'info@expressdiner.com',
+        email: 'info@shreekrishna.com',
         gstNumber: '29AAAAA1111A1Z1',
         currency: 'INR',
         timezone: 'Asia/Kolkata',
@@ -453,6 +453,7 @@ async function main() {
       },
     });
     console.log('Seeded default restaurant settings.');
+
   }
 
   console.log('Seeding completed successfully.');

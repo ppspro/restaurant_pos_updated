@@ -1,16 +1,28 @@
 /* Receipt Print Media Styles
-   Isolates .receipt-print-area to show only during window.print()
-   Approximates 80mm thermal paper width in browser print dialog
+   Uses visibility-based isolation so the receipt prints correctly
+   regardless of DOM nesting depth (works inside modals/portals).
+   Approximates 80mm thermal paper width in browser print dialog.
 */
 
 @media print {
-  /* Hide everything except the active receipt */
-  body > *:not(#receipt-print-root) {
-    display: none !important;
+  /* Step 1: Make everything invisible */
+  body * {
+    visibility: hidden !important;
   }
 
+  /* Step 2: Make the receipt root and ALL its descendants visible */
+  #receipt-print-root,
+  #receipt-print-root * {
+    visibility: visible !important;
+  }
+
+  /* Step 3: Position the receipt at the top-left of the page */
   #receipt-print-root {
-    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 99999 !important;
+    background: #fff !important;
   }
 
   /* Page setup for thermal paper (80mm ≈ 3.15 inch) */
@@ -53,3 +65,4 @@
     border-color: #555 !important;
   }
 }
+
