@@ -98,7 +98,7 @@ export const PaymentDialog = ({ isOpen, onClose, total, onPaymentSuccess }: Paym
                 onClick={() => { setMethod('CASH'); setError(''); }}
                 className="h-11 flex flex-col items-center justify-center gap-0.5"
               >
-                <Coins className="h-4 w-4" />
+                <Coins className="h-4 w-4 shrink-0" />
                 CASH
               </Button>
               <Button
@@ -106,7 +106,7 @@ export const PaymentDialog = ({ isOpen, onClose, total, onPaymentSuccess }: Paym
                 onClick={() => { setMethod('UPI'); setError(''); }}
                 className="h-11 flex flex-col items-center justify-center gap-0.5"
               >
-                <Landmark className="h-4 w-4" />
+                <Landmark className="h-4 w-4 shrink-0" />
                 UPI QR
               </Button>
               <Button
@@ -114,7 +114,7 @@ export const PaymentDialog = ({ isOpen, onClose, total, onPaymentSuccess }: Paym
                 onClick={() => { setMethod('CARD'); setError(''); }}
                 className="h-11 flex flex-col items-center justify-center gap-0.5"
               >
-                <CreditCard className="h-4 w-4" />
+                <CreditCard className="h-4 w-4 shrink-0" />
                 CARD
               </Button>
             </div>

@@ -6,7 +6,7 @@ import { authorize } from '../../../shared/middlewares/authorize';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('SUPER_ADMIN')); // Enforce admin-only for exports currently
+router.use(authorize('SUPER_ADMIN', 'MANAGER')); // Enforce admin-only for exports currently
 
 // List Endpoints (Paginated for frontend tables)
 router.get('/sales/list', ReportController.getSalesList);

@@ -41,7 +41,9 @@ export const LoginForm = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      setCapsLockActive(e.getModifierState('CapsLock'));
+      if (typeof e.getModifierState === 'function') {
+        setCapsLockActive(e.getModifierState('CapsLock'));
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyDown);

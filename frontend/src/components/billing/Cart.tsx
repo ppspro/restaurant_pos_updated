@@ -496,31 +496,34 @@ export const Cart = () => {
         <div className="grid grid-cols-3 gap-2.5">
           <Button
             key="CASH"
+            variant="ghost"
             onClick={() => handleFastPay('CASH')}
             disabled={cart.length === 0}
-            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-amber-500/5 text-amber-600 border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white transition-all shadow-sm"
           >
-            <Coins className="h-4 w-4 mb-0.5" />
+            <Coins className="h-4 w-4 mb-0.5 shrink-0" />
             CASH (F2)
           </Button>
 
           <Button
             key="UPI"
+            variant="ghost"
             onClick={() => handleFastPay('UPI')}
             disabled={cart.length === 0}
-            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-blue-500/5 text-blue-600 border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all shadow-sm"
           >
-            <Landmark className="h-4 w-4 mb-0.5" />
+            <Landmark className="h-4 w-4 mb-0.5 shrink-0" />
             UPI QR (F3)
           </Button>
 
           <Button
             key="CARD"
+            variant="ghost"
             onClick={() => handleFastPay('CARD')}
             disabled={cart.length === 0}
-            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-emerald-500/5 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+            className="h-12 text-[10px] font-bold flex flex-col items-center justify-center p-0.5 rounded-xl border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition-all shadow-sm"
           >
-            <CreditCard className="h-4 w-4 mb-0.5" />
+            <CreditCard className="h-4 w-4 mb-0.5 shrink-0" />
             CARD (F4)
           </Button>
         </div>
