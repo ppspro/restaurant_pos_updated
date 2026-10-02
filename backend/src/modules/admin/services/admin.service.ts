@@ -1,5 +1,7 @@
 import os from 'os';
+import crypto from 'crypto';
 import prisma from '../../../prisma/client';
+import { hashPassword } from '../../../shared/utils/password';
 
 export class AdminService {
 
@@ -133,5 +135,46 @@ export class AdminService {
     ]);
 
     return { totalUsers, totalTerminals, onlineTerminals, lastBackup };
+  }
+
+  // ─── RECOVERY KEYS ───────────────────────────────────────────
+
+  static async getRecoveryKeys() {
+    return await prisma.recoveryKey.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        label: true,
+        usedAt: true,
+        isRevoked: true,
+        createdAt: true,
+      }
+    });
+  }
+
+  static async createRecoveryKey(label: string, createdBy: string) {
+    // Generate a random 32-character key
+    const plaintextKey = crypto.randomBytes(16).toString('hex').toUpperCase();
+    const formattedKey = `${plaintextKey.slice(0, 8)}-${plaintextKey.slice(8, 16)}-${plaintextKey.slice(16, 24)}-${plaintextKey.slice(24, 32)}`;
+    
+    // Hash it for storage
+    const keyHash = await hashPassword(formattedKey);
+    
+    await prisma.recoveryKey.create({
+      data: {
+        keyHash,
+        label,
+        createdBy,
+      }
+    });
+
+    return { plaintextKey: formattedKey };
+  }
+
+  static async revokeRecoveryKey(id: string) {
+    return await prisma.recoveryKey.update({
+      where: { id },
+      data: { isRevoked: true }
+    });
   }
 }

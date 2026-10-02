@@ -28,4 +28,9 @@ router.put('/settings', AdminController.updateSettings);
 // System Health
 router.get('/health', AdminController.getSystemHealth);
 
+// Recovery Keys
+router.get('/recovery-keys', AdminController.getRecoveryKeys);
+router.post('/recovery-keys', AdminController.generateRecoveryKey);
+router.delete('/recovery-keys/:id', AdminController.revokeRecoveryKey);
+
 export default router;

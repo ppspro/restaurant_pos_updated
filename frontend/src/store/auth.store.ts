@@ -6,7 +6,7 @@ export interface User {
   id: string;
   name: string;
   username: string;
-  role: 'SUPER_ADMIN' | 'CASHIER';
+  role: 'SUPER_ADMIN' | 'CASHIER' | 'MANAGER';
 }
 
 interface AuthState {
@@ -55,7 +55,10 @@ export const useAuthStore = create<AuthState>()(
         const { accessToken } = get();
         try {
           if (accessToken) {
-            await api.post('/auth/logout', { reason });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            await api.post('/auth/logout', { reason }, { signal: controller.signal });
+            clearTimeout(timeoutId);
           }
         } catch (error) {
           console.error('Logout request failed:', error);

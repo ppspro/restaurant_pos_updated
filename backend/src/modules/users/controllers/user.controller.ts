@@ -12,10 +12,11 @@ export class UserController {
   static async createUser(req: Request, res: Response, next: NextFunction) {
     try {
       const auditorId = req.user!.userId;
+      const auditorRole = req.user!.role;
       const ipAddress = req.ip || '127.0.0.1';
       const userAgent = req.headers['user-agent'] as string | undefined;
 
-      const newUser = await UserService.createUser(req.body, auditorId, ipAddress, userAgent);
+      const newUser = await UserService.createUser(req.body, auditorId, auditorRole, ipAddress, userAgent);
       return ApiResponse.success(res, newUser, 'User created successfully', 201);
     } catch (error) {
       next(error);
@@ -45,10 +46,11 @@ export class UserController {
     try {
       const id = getId(req.params.id);
       const auditorId = req.user!.userId;
+      const auditorRole = req.user!.role;
       const ipAddress = req.ip || '127.0.0.1';
       const userAgent = req.headers['user-agent'] as string | undefined;
 
-      const updatedUser = await UserService.updateUser(id, req.body, auditorId, ipAddress, userAgent);
+      const updatedUser = await UserService.updateUser(id, req.body, auditorId, auditorRole, ipAddress, userAgent);
       return ApiResponse.success(res, updatedUser, 'User updated successfully');
     } catch (error) {
       next(error);
@@ -89,10 +91,11 @@ export class UserController {
     try {
       const id = getId(req.params.id);
       const auditorId = req.user!.userId;
+      const auditorRole = req.user!.role;
       const ipAddress = req.ip || '127.0.0.1';
       const userAgent = req.headers['user-agent'] as string | undefined;
 
-      await UserService.deleteUser(id, auditorId, ipAddress, userAgent);
+      await UserService.deleteUser(id, auditorId, auditorRole, ipAddress, userAgent);
       return ApiResponse.success(res, null, 'User deleted successfully');
     } catch (error) {
       next(error);

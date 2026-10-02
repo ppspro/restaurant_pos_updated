@@ -15,6 +15,8 @@ export default function MenuManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -130,13 +132,48 @@ export default function MenuManagement() {
         </div>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="w-full md:w-96 relative">
+          <input
+            type="text"
+            placeholder="Search by name, item no..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <div className="absolute left-3 top-2.5 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Categories ({categories.length})</h2>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedCategoryId(null)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              selectedCategoryId === null
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+            }`}
+          >
+            All
+          </button>
           {categories.map((c) => (
-            <span key={c.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+            <button
+              key={c.id}
+              onClick={() => setSelectedCategoryId(c.id === selectedCategoryId ? null : c.id)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                selectedCategoryId === c.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`}
+            >
               {c.name}
-            </span>
+            </button>
           ))}
         </div>
       </div>
@@ -157,39 +194,69 @@ export default function MenuManagement() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {menuItems.map((item) => {
-                const category = categories.find((c) => c.id === item.categoryId);
-                const imgSrc = item.image ? `${API_BASE_URL}${item.image}` : '/images/default-food.png';
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="h-12 w-12 rounded-lg overflow-hidden border border-gray-200 shadow-sm relative group cursor-pointer">
-                        <img src={imgSrc} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                        <div className="fixed hidden group-hover:block z-50 transform translate-x-14 -translate-y-10 w-48 h-48 bg-white border shadow-2xl rounded-xl overflow-hidden">
-                           <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+              {(() => {
+                let filtered = menuItems;
+                if (selectedCategoryId) {
+                  filtered = filtered.filter(i => i.categoryId === selectedCategoryId);
+                }
+                if (searchQuery.trim()) {
+                  const q = searchQuery.toLowerCase().trim();
+                  filtered = filtered.filter(i => {
+                    const c = categories.find(cat => cat.id === i.categoryId);
+                    return i.name.toLowerCase().includes(q) || 
+                           i.itemNumber.toLowerCase().includes(q) ||
+                           (c && c.name.toLowerCase().includes(q));
+                  });
+                }
+                if (filtered.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col items-center justify-center">
+                          <svg className="w-12 h-12 mb-4 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="text-lg font-medium">No menu items found</p>
+                          <p className="text-sm mt-1">Try changing your search or category filter.</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">{item.itemNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{category?.name || 'Unknown'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">₹{item.price}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${item.itemType === 'KITCHEN' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}`}>
-                        {item.itemType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
-                        <Edit className="w-4 h-4 text-blue-600" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                }
+                return filtered.map((item) => {
+                  const category = categories.find((c) => c.id === item.categoryId);
+                  const imgSrc = item.image ? `${API_BASE_URL}${item.image}` : '/images/default-food.png';
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="h-12 w-12 rounded-lg overflow-hidden border border-gray-200 shadow-sm relative group cursor-pointer">
+                          <img src={imgSrc} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                          <div className="fixed hidden group-hover:block z-50 transform translate-x-14 -translate-y-10 w-48 h-48 bg-white border shadow-2xl rounded-xl overflow-hidden">
+                             <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">{item.itemNumber}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{category?.name || 'Unknown'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">₹{item.price}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${item.itemType === 'KITCHEN' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}`}>
+                          {item.itemType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
+                          <Edit className="w-4 h-4 text-blue-600" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         </div>

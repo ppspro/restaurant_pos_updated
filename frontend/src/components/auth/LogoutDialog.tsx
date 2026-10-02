@@ -41,7 +41,12 @@ export function LogoutDialog({ isOpen, onClose }: LogoutDialogProps) {
 
   const checkActiveShift = async () => {
     try {
-      const res = await api.get('/auth/shifts/current');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
+      const res = await api.get('/auth/shifts/current', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       const shift = res.data?.data;
       if (shift && shift.status === 'OPEN') {
         setActiveShift(shift);
@@ -50,6 +55,7 @@ export function LogoutDialog({ isOpen, onClose }: LogoutDialogProps) {
         setModalState('NO_SHIFT');
       }
     } catch (error: any) {
+      console.warn('Shift check failed or timed out, proceeding to normal logout', error);
       setModalState('NO_SHIFT');
     }
   };

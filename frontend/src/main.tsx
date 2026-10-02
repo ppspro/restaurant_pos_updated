@@ -7,6 +7,7 @@ import { queryClient } from "./lib/queryClient";
 import { GlobalNotificationProvider } from "./components/ui/GlobalNotificationProvider";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { ThemeProvider } from "./theme/ThemeProvider";
+import "./services/offlineQueue.service"; // Initialize offline queue listener
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

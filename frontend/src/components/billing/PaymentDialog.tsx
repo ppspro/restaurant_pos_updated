@@ -3,6 +3,7 @@ import { useBillingStore } from '../../store/billing.store';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Coins, Landmark, CreditCard, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -146,9 +147,12 @@ export const PaymentDialog = ({ isOpen, onClose, total, onPaymentSuccess }: Paym
               <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg border border-gray-150 dark:border-gray-800">
                 {method === 'UPI' && (
                   <div className="flex flex-col items-center p-3 bg-white border border-gray-100 rounded-lg shadow-inner max-w-[140px] mx-auto">
-                    {/* Mock QR placeholder */}
-                    <div className="h-24 w-24 bg-gray-100 dark:bg-gray-800 border flex items-center justify-center text-[10px] text-gray-400 text-center leading-tight">
-                      [UPI QR MOCK]
+                    {/* Real UPI QR */}
+                    <div className="h-24 w-24 flex items-center justify-center">
+                      <QRCodeSVG 
+                        value={`upi://pay?pa=restaurant@upi&pn=Shree%20Krishna&am=${total.toFixed(2)}&cu=INR`}
+                        size={96}
+                      />
                     </div>
                     <span className="text-[9px] text-gray-400 mt-1 font-semibold">Scan to Pay</span>
                   </div>

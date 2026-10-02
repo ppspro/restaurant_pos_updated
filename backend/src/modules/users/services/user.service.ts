@@ -4,7 +4,7 @@ import { BadRequestError } from '../../../shared/errors/badRequestError';
 import { AuditAction } from '@prisma/client';
 
 export class UserService {
-  static async createUser(data: any, auditorId: string, ipAddress?: string, userAgent?: string) {
+  static async createUser(data: any, auditorId: string, auditorRole: string, ipAddress?: string, userAgent?: string) {
     const { fullName, username, email, phone, password, role, status } = data;
 
     // Validate unique constraints
@@ -24,6 +24,10 @@ export class UserService {
 
     if (!roleRecord) {
       throw new BadRequestError('Invalid role specified');
+    }
+
+    if (auditorRole !== 'SUPER_ADMIN' && roleRecord.name === 'SUPER_ADMIN') {
+      throw new BadRequestError('You are not authorized to assign SUPER_ADMIN role');
     }
 
     const hashedPassword = await hashPassword(password);
@@ -99,13 +103,17 @@ export class UserService {
     return rest;
   }
 
-  static async updateUser(id: string, data: any, auditorId: string, ipAddress?: string, userAgent?: string) {
-    const user = await prisma.user.findUnique({ where: { id } });
+  static async updateUser(id: string, data: any, auditorId: string, auditorRole: string, ipAddress?: string, userAgent?: string) {
+    const user = await prisma.user.findUnique({ where: { id }, include: { role: true } });
     if (!user || user.deletedAt) {
       throw new BadRequestError('User not found');
     }
 
     const { fullName, username, email, phone, role, status } = data;
+
+    if (auditorRole !== 'SUPER_ADMIN' && user.role.name === 'SUPER_ADMIN') {
+      throw new BadRequestError('You are not authorized to modify a SUPER_ADMIN');
+    }
 
     // Validate unique if changing
     if (username !== user.username || email !== user.email) {
@@ -125,6 +133,11 @@ export class UserService {
     if (role) {
       const roleRecord = await prisma.role.findUnique({ where: { name: role } });
       if (!roleRecord) throw new BadRequestError('Invalid role specified');
+      
+      if (auditorRole !== 'SUPER_ADMIN' && roleRecord.name === 'SUPER_ADMIN') {
+        throw new BadRequestError('You are not authorized to assign SUPER_ADMIN role');
+      }
+      
       roleId = roleRecord.id;
     }
 
@@ -204,7 +217,7 @@ export class UserService {
     });
   }
 
-  static async deleteUser(id: string, auditorId: string, ipAddress?: string, userAgent?: string) {
+  static async deleteUser(id: string, auditorId: string, auditorRole: string, ipAddress?: string, userAgent?: string) {
     if (id === auditorId) {
       throw new BadRequestError('Cannot delete your own account');
     }
@@ -212,6 +225,10 @@ export class UserService {
     const user = await prisma.user.findUnique({ where: { id }, include: { role: true } });
     if (!user || user.deletedAt) {
       throw new BadRequestError('User not found');
+    }
+
+    if (auditorRole !== 'SUPER_ADMIN' && user.role.name === 'SUPER_ADMIN') {
+      throw new BadRequestError('You are not authorized to delete a SUPER_ADMIN');
     }
 
     if (user.role.name === 'SUPER_ADMIN') {

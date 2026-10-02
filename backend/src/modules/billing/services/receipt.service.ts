@@ -62,10 +62,12 @@ export class ReceiptService {
       changeDue: number;
       transactionRef: string;
       paperSize?: PaperSize;
+      createdAt?: Date;
     }
   ): ReceiptBundle {
     const paperSize = meta.paperSize ?? '80mm';
-    const orderTime = new Date().toLocaleTimeString('en-IN', {
+    const orderDateObj = meta.createdAt ?? new Date();
+    const orderTime = orderDateObj.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

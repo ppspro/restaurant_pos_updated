@@ -23,6 +23,7 @@ export interface CreateOrderInput {
   paymentMethod: 'CASH' | 'UPI' | 'CARD';
   receivedCash?: number;
   transactionReference?: string;
+  idempotencyKey?: string;
 }
 
 export interface CreatedOrderResult {
@@ -32,6 +33,7 @@ export interface CreatedOrderResult {
   grandTotal: number;
   paymentMethod: string;
   businessDate: string;
+  orderTime: string;
 }
 
 export class OrderService {
@@ -43,6 +45,24 @@ export class OrderService {
    * 4. Audit log
    */
   static async createOrder(input: CreateOrderInput): Promise<CreatedOrderResult> {
+    if (input.idempotencyKey) {
+      const existingOrder = await prisma.order.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        include: { payment: true }
+      });
+      if (existingOrder) {
+        return {
+          orderId: existingOrder.id,
+          orderNumber: existingOrder.orderNumber,
+          tokenNumber: parseInt(existingOrder.tokenNumber, 10),
+          grandTotal: Number(existingOrder.grandTotal),
+          paymentMethod: existingOrder.payment?.paymentMethod || 'CASH',
+          businessDate: existingOrder.businessDate.toISOString().slice(0, 10),
+          orderTime: existingOrder.createdAt.toISOString(),
+        };
+      }
+    }
+
     return await prisma.$transaction(async (tx) => {
       // 1. Find active BusinessDay
       const now = new Date();
@@ -51,7 +71,8 @@ export class OrderService {
       const businessDay = input.businessDayId
         ? await tx.businessDay.findUnique({ where: { id: input.businessDayId } })
         : await tx.businessDay.findFirst({
-            where: { businessDate: todayUTC, status: 'OPEN' },
+            where: { status: 'OPEN' },
+            orderBy: { openedAt: 'desc' },
           });
 
       if (!businessDay || businessDay.status !== 'OPEN') {
@@ -121,6 +142,7 @@ export class OrderService {
           orderStatus: OrderStatus.PAID,
           businessDate: businessDay.businessDate,
           completedAt: new Date(),
+          idempotencyKey: input.idempotencyKey ?? null,
         },
       });
 
@@ -162,13 +184,22 @@ export class OrderService {
         },
       });
 
+      // Format the businessDate in Asia/Kolkata timezone to avoid UTC date shifting
+      const tzBusinessDate = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      }).format(businessDay.businessDate);
+
       return {
         orderId: order.id,
         orderNumber,
         tokenNumber,
         grandTotal: input.grandTotal,
         paymentMethod: input.paymentMethod,
-        businessDate: businessDay.businessDate.toISOString().slice(0, 10),
+        businessDate: tzBusinessDate,
+        orderTime: order.createdAt.toISOString(),
       };
     });
   }

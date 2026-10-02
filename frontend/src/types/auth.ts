@@ -2,7 +2,7 @@ export interface AuthUser {
   id: string;
   name: string;
   username: string;
-  role: 'SUPER_ADMIN' | 'CASHIER';
+  role: 'SUPER_ADMIN' | 'CASHIER' | 'MANAGER';
 }
 
 export interface LoginCredentials {

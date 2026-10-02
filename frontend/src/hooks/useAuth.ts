@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const authStoreLogin = useAuthStore((state) => state.login);
   const authStoreLogout = useAuthStore((state) => state.logout);
@@ -31,7 +33,8 @@ export const useAuth = () => {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      navigate('/login');
+      queryClient.clear();
+      navigate('/login', { replace: true });
     }
   };
 

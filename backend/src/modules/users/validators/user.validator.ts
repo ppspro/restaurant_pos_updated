@@ -10,7 +10,7 @@ export const createUserValidator = [
     .matches(/[a-z]/).withMessage('Password must contain a lowercase letter')
     .matches(/[0-9]/).withMessage('Password must contain a number')
     .matches(/[@$!%*?&]/).withMessage('Password must contain a special character'),
-  body('role').isIn(['SUPER_ADMIN', 'CASHIER']).withMessage('Invalid role'),
+  body('role').isIn(['SUPER_ADMIN', 'CASHIER', 'MANAGER']).withMessage('Invalid role'),
   body('status').isIn(['ACTIVE', 'INACTIVE']).withMessage('Invalid status'),
 ];
 
@@ -18,7 +18,7 @@ export const updateUserValidator = [
   body('fullName').optional().trim().notEmpty().withMessage('Full Name cannot be empty'),
   body('username').optional().trim().notEmpty().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
   body('email').optional().isEmail().withMessage('Valid email is required'),
-  body('role').optional().isIn(['SUPER_ADMIN', 'CASHIER']).withMessage('Invalid role'),
+  body('role').optional().isIn(['SUPER_ADMIN', 'CASHIER', 'MANAGER']).withMessage('Invalid role'),
   body('status').optional().isIn(['ACTIVE', 'INACTIVE']).withMessage('Invalid status'),
 ];
 

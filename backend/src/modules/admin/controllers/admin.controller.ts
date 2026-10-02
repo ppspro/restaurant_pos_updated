@@ -61,9 +61,12 @@ export class AdminController {
     try {
       const roleId = req.params.roleId as string;
       const { permissionIds } = req.body;
+      console.log(`[AdminController] updateRolePermissions for roleId: ${roleId}, permissionIds: ${JSON.stringify(permissionIds)}`);
       const result = await AdminService.updateRolePermissions(roleId, permissionIds || []);
+      console.log(`[AdminController] Successfully updated roleId: ${roleId}`);
       res.json({ success: true, data: result });
     } catch (error) {
+      console.error(`[AdminController] Failed to update permissions for roleId ${req.params.roleId}:`, error);
       res.status(500).json({ success: false, error: 'Failed to update permissions' });
     }
   }
@@ -94,6 +97,37 @@ export class AdminController {
       res.json({ success: true, data: health });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Failed to fetch system health' });
+    }
+  }
+
+  // ─── RECOVERY KEYS ──────────────────────────────────────────
+  static async getRecoveryKeys(req: Request, res: Response) {
+    try {
+      const keys = await AdminService.getRecoveryKeys();
+      res.json({ success: true, data: keys });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to fetch recovery keys' });
+    }
+  }
+
+  static async generateRecoveryKey(req: Request, res: Response) {
+    try {
+      const { label } = req.body;
+      const createdBy = (req as any).user.id;
+      const result = await AdminService.createRecoveryKey(label, createdBy);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to generate recovery key' });
+    }
+  }
+
+  static async revokeRecoveryKey(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const result = await AdminService.revokeRecoveryKey(id);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to revoke recovery key' });
     }
   }
 }

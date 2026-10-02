@@ -40,7 +40,7 @@ export function ChartCard({ title, data, children, className, minHeight = '300px
   };
 
   return (
-    <Card className={`flex flex-col ${className || ''}`}>
+    <Card className={`flex flex-col w-full ${className || ''}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>{title}</CardTitle>
         <Button 

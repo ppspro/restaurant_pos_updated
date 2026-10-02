@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 
 interface RoleGuardProps {
-  allowedRoles: ('SUPER_ADMIN' | 'CASHIER')[];
+  allowedRoles: ('SUPER_ADMIN' | 'CASHIER' | 'MANAGER')[];
 }
 
 export const RoleGuard = ({ allowedRoles }: RoleGuardProps) => {

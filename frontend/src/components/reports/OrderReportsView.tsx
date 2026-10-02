@@ -82,19 +82,21 @@ export function OrderReportsView() {
   return (
     <div className="space-y-6">
       <ChartCard title="Order Timeline" data={mockChartData}>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={mockChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-            <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' } as any}
-              itemStyle={{ color: 'hsl(var(--foreground))' }}
-            />
-            <Bar dataKey="completed" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 4, 4]} />
-            <Bar dataKey="cancelled" stackId="a" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="w-full h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={mockChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' } as any}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
+              />
+              <Bar dataKey="completed" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 4, 4]} />
+              <Bar dataKey="cancelled" stackId="a" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </ChartCard>
 
       <div className="mt-8">

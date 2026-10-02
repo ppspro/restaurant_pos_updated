@@ -7,6 +7,10 @@ import { useAuthStore } from '../../store/auth.store';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTheme } from '../../theme/ThemeContext';
+import { ProfileModal } from '../auth/ProfileModal';
+import { ChangePasswordModal } from '../auth/ChangePasswordModal';
+import { LockScreenOverlay } from '../auth/LockScreenOverlay';
+import { ShiftDetailsModal } from '../auth/ShiftDetailsModal';
 
 export const BillingHeader = () => {
   const {
@@ -37,6 +41,12 @@ export const BillingHeader = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
   const [logoutError, setLogoutError] = useState('');
+  
+  // New Modals State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isLockScreenActive, setIsLockScreenActive] = useState(false);
+  const [isShiftDetailsOpen, setIsShiftDetailsOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -104,9 +114,6 @@ export const BillingHeader = () => {
         searchInputRef.current !== e.target
       ) {
         setShowHistory(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setIsProfileOpen(false);
       }
     };
     document.addEventListener('mousedown', clickOutside);
@@ -292,21 +299,25 @@ export const BillingHeader = () => {
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl z-50 overflow-hidden py-2 animate-fade-in-down">
+            <>
+              {/* Overlay blocker */}
+              <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}></div>
+              
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl z-50 overflow-hidden py-2 animate-fade-in-down">
               <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 mb-2">
                 <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Signed In As</p>
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user?.username || 'cashier'}</p>
               </div>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              <button onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <User className="h-4 w-4" /> My Profile
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              <button onClick={() => { setIsChangePasswordOpen(true); setIsProfileOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <Key className="h-4 w-4" /> Change Password
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              <button onClick={() => { setIsLockScreenActive(true); setIsProfileOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <Lock className="h-4 w-4" /> Lock Screen
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              <button onClick={() => { setIsShiftDetailsOpen(true); setIsProfileOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <FileText className="h-4 w-4" /> Shift Details
               </button>
               <div className="h-px bg-gray-100 dark:bg-gray-800 my-2"></div>
@@ -317,6 +328,7 @@ export const BillingHeader = () => {
                 <LogOut className="h-4 w-4" /> Sign Out
               </button>
             </div>
+            </>
           )}
         </div>
       </div>
@@ -330,7 +342,7 @@ export const BillingHeader = () => {
 
       {/* Sign Out Dialog */}
       {isSignOutDialogOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl p-6 w-[400px] max-w-[90vw] animate-fade-in-up">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">End Shift & Sign Out</h2>
             
@@ -364,6 +376,11 @@ export const BillingHeader = () => {
           </div>
         </div>
       )}
+
+      <ProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+      <ChangePasswordModal isOpen={isChangePasswordOpen} onClose={() => setIsChangePasswordOpen(false)} />
+      <ShiftDetailsModal isOpen={isShiftDetailsOpen} onClose={() => setIsShiftDetailsOpen(false)} />
+      {isLockScreenActive && <LockScreenOverlay onUnlock={() => setIsLockScreenActive(false)} />}
     </header>
   );
 };

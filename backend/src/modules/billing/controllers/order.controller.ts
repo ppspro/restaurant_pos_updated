@@ -17,6 +17,8 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       receivedCash,
       transactionReference,
     } = req.body;
+    
+    const idempotencyKey = req.headers['x-idempotency-key'] as string | undefined;
 
     if (!cashierId || !items?.length || !paymentMethod || grandTotal === undefined) {
       res.status(400).json({ success: false, message: 'cashierId, items, paymentMethod, and grandTotal are required' });
@@ -35,12 +37,21 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       paymentMethod,
       receivedCash: receivedCash ? Number(receivedCash) : undefined,
       transactionReference,
+      idempotencyKey,
     });
 
     res.status(201).json({ success: true, data: result });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Order creation failed';
-    const status = message.includes('No active Business Day') ? 409 : 500;
+  } catch (error: any) {
+    let message = error instanceof Error ? error.message : 'Order creation failed';
+    let status = 500;
+
+    if (message.includes('No active Business Day')) {
+      status = 409;
+    } else if (error?.code === 'P2002') {
+      status = 409;
+      message = 'Duplicate order detected. This order has already been processed.';
+    }
+
     res.status(status).json({ success: false, message });
   }
 };

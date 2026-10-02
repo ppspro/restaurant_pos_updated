@@ -34,6 +34,7 @@ export default function ReportsDashboard() {
   const reportModules = [
     { id: 'daily-sales', title: 'Daily Sales', desc: 'Comprehensive breakdown of today\'s sales.', icon: <BarChart3 className="w-5 h-5" />, category: 'sales' },
     { id: 'weekly-sales', title: 'Weekly Trends', desc: 'Revenue performance over the last 7 days.', icon: <LineChart className="w-5 h-5" />, category: 'sales' },
+    { id: 'total-sales', title: 'Total Sales', desc: 'All-time revenue and order history.', icon: <BarChart3 className="w-5 h-5" />, category: 'sales' },
     { id: 'order-metrics', title: 'Order Metrics', desc: 'Kitchen vs Packed, average completion times.', icon: <Receipt className="w-5 h-5" />, category: 'orders' },
     { id: 'payment-dist', title: 'Payment Distribution', desc: 'Breakdown of Cash, UPI, and Card transactions.', icon: <PieChart className="w-5 h-5" />, category: 'payments' },
     { id: 'cashier-perf', title: 'Cashier Performance', desc: 'Shift summaries, active cashiers, and leaderboards.', icon: <Users className="w-5 h-5" />, category: 'staff' },
@@ -63,8 +64,8 @@ export default function ReportsDashboard() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            {activeReportId === 'daily-sales' || activeReportId === 'weekly-sales' ? (
-              <SalesReportsView />
+            {activeReportId === 'daily-sales' || activeReportId === 'weekly-sales' || activeReportId === 'total-sales' ? (
+              <SalesReportsView reportType={activeReportId} />
             ) : activeReportId === 'order-metrics' ? (
               <OrderReportsView />
             ) : activeReportId === 'payment-dist' || activeReportId === 'gst-tax' ? (

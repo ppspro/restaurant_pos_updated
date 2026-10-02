@@ -179,6 +179,7 @@ export function UserModal({ isOpen, onClose, onSubmit, user }: UserModalProps) {
                 className="w-full h-10 px-3 text-sm rounded-xl border border-border bg-background focus:ring-1 focus:ring-blue-500"
               >
                 <option value="CASHIER">CASHIER</option>
+                <option value="MANAGER">MANAGER</option>
                 <option value="SUPER_ADMIN">SUPER_ADMIN</option>
               </select>
             </div>
