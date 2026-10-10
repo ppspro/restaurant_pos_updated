@@ -30,3 +30,15 @@ backend/prisma/generated/
 # IDEs and Editors
 .vscode/
 .idea/
+
+# Packaging and Zip Archives
+*.zip
+*.ps1
+temp_zip/
+temp_frontend_zip/
+backend_production_package/
+backend/test_*.js
+backend/verify-db.*
+backend/create-manager.js
+backend/generate-manager-sql.js
+
